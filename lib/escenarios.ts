@@ -66,6 +66,24 @@ export const ESCENARIOS: readonly Escenario[] = [
   },
 ] as const;
 
+/**
+ * Semillas de réplica.
+ *
+ * POR QUÉ NO ALCANZA UNA SOLA CORRIDA:
+ * Cada escenario que cambia el sobreagendamiento o la tasa de ausencia
+ * REGENERA la jornada: distinta grilla, distintos pacientes, distintas
+ * duraciones. Comparar dos escenarios así no compara políticas, compara
+ * también dos poblaciones.
+ *
+ * Con una sola corrida el ruido de generación es del orden del efecto que se
+ * quiere medir, y produce resultados imposibles —sobreagendar menos dando peor
+ * espera— que delatan que la comparación no era válida.
+ *
+ * Se promedian réplicas y se reporta la dispersión, para poder distinguir un
+ * efecto real de una diferencia que cabe dentro del error del modelo.
+ */
+const SEMILLAS = [20260813, 7, 991, 40213, 55, 8123, 314159, 2718] as const;
+
 export interface ResumenEscenario {
   escenario: Escenario;
   /** Espera percibida media de toda la jornada. */
@@ -85,6 +103,11 @@ export interface ResumenEscenario {
   curva: Array<{ hora: Minutos; espera: number }>;
   /** Última hora con pacientes esperando. */
   cierre: Minutos;
+  /** Desvío estándar entre réplicas. Sin esto no se puede afirmar que una
+   *  diferencia entre escenarios sea real y no ruido de generación. */
+  desvio: { espera: number; atendidos: number };
+  /** Cantidad de réplicas promediadas. */
+  replicas: number;
 }
 
 const promedio = (xs: number[]) =>
@@ -98,8 +121,8 @@ export function horasDelEje(resumenes: readonly ResumenEscenario[]): Minutos[] {
   return horas;
 }
 
-export function evaluarEscenario(escenario: Escenario): ResumenEscenario {
-  const red = generarRed(20260813, {
+function evaluarUnaReplica(escenario: Escenario, semilla: number): ResumenEscenario {
+  const red = generarRed(semilla, {
     factorSobreagenda: escenario.factorSobreagenda,
     reduccionAusencias: escenario.reduccionAusencias,
   });
@@ -146,10 +169,56 @@ export function evaluarEscenario(escenario: Escenario): ResumenEscenario {
     tasaAusencia: ausentes / (ausentes + atendidos),
     atendidos,
     cierre,
+    desvio: { espera: 0, atendidos: 0 },
+    replicas: 1,
     curva: horasConCola.map((hora) => ({
       hora,
       espera: promedio(porHora.get(hora)!),
     })),
+  };
+}
+
+const desvioDe = (xs: number[]) => {
+  if (xs.length < 2) return 0;
+  const mu = promedio(xs);
+  return Math.sqrt(xs.reduce((s, x) => s + (x - mu) ** 2, 0) / xs.length);
+};
+
+/** Promedia las réplicas de un escenario y conserva la dispersión. */
+export function evaluarEscenario(escenario: Escenario): ResumenEscenario {
+  const replicas = SEMILLAS.map((s) => evaluarUnaReplica(escenario, s));
+
+  // La curva se promedia hora a hora sobre las réplicas que llegaron a esa hora.
+  const porHora = new Map<Minutos, number[]>();
+  for (const r of replicas) {
+    for (const punto of r.curva) {
+      const xs = porHora.get(punto.hora) ?? [];
+      xs.push(punto.espera);
+      porHora.set(punto.hora, xs);
+    }
+  }
+
+  const campo = (f: (r: ResumenEscenario) => number) => promedio(replicas.map(f));
+
+  return {
+    escenario,
+    espera: campo((r) => r.espera),
+    tarde: campo((r) => r.tarde),
+    p90: campo((r) => r.p90),
+    dentroDe15: campo((r) => r.dentroDe15),
+    tasaAusencia: campo((r) => r.tasaAusencia),
+    atendidos: Math.round(campo((r) => r.atendidos)),
+    cierre: Math.round(campo((r) => r.cierre)),
+    replicas: replicas.length,
+    desvio: {
+      espera: desvioDe(replicas.map((r) => r.espera)),
+      atendidos: desvioDe(replicas.map((r) => r.atendidos)),
+    },
+    curva: [...porHora.entries()]
+      .sort(([a], [b]) => a - b)
+      // Una hora que solo aparece en pocas réplicas no es representativa.
+      .filter(([, xs]) => xs.length >= replicas.length / 2)
+      .map(([hora, xs]) => ({ hora, espera: promedio(xs) })),
   };
 }
 

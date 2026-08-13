@@ -22,15 +22,17 @@ function main(): void {
   const base = resumenes[0];
   const fin = resumenes[resumenes.length - 1];
 
-  console.log('\n═══ ESCENARIOS · red de 8 sedes, jornada completa ═══\n');
-  console.log('escenario                media    tarde     P90   ≤15′   ausencias  consultas');
-  console.log('─'.repeat(78));
+  console.log(
+    `\n═══ ESCENARIOS · red de 8 sedes · promedio de ${base.replicas} réplicas ═══\n`,
+  );
+  console.log('escenario                  media (±sd)     tarde     P90   ≤15′  ausenc.  consultas (±sd)');
+  console.log('─'.repeat(94));
 
   for (const r of resumenes) {
     console.log(
-      `${r.escenario.nombre.padEnd(24)}${pad(r.espera.toFixed(1), 6)}′ ${pad(r.tarde.toFixed(1), 7)}′ ` +
-        `${pad(r.p90.toFixed(0), 6)}′ ${pad((r.dentroDe15 * 100).toFixed(0), 5)}% ` +
-        `${pad((r.tasaAusencia * 100).toFixed(1), 10)}% ${pad(r.atendidos, 10)}`,
+      `${r.escenario.nombre.padEnd(24)}${pad(r.espera.toFixed(1), 6)}′ ±${r.desvio.espera.toFixed(1).padStart(4)} ` +
+        `${pad(r.tarde.toFixed(1), 8)}′ ${pad(r.p90.toFixed(0), 6)}′ ${pad((r.dentroDe15 * 100).toFixed(0), 5)}% ` +
+        `${pad((r.tasaAusencia * 100).toFixed(1), 7)}% ${pad(r.atendidos, 9)} ±${r.desvio.atendidos.toFixed(0)}`,
     );
   }
 
@@ -51,8 +53,16 @@ function main(): void {
   console.log(
     `Atendidos ≤15′     ${(base.dentroDe15 * 100).toFixed(0)}% → ${(fin.dentroDe15 * 100).toFixed(0)}%`,
   );
+  const deltaConsultas = fin.atendidos - base.atendidos;
+  const ruido = Math.max(base.desvio.atendidos, fin.desvio.atendidos);
   console.log(
-    `Consultas por día  ${base.atendidos} → ${fin.atendidos}   (${fin.atendidos - base.atendidos})  ← costo de capacidad, decirlo`,
+    `Consultas por día  ${base.atendidos} → ${fin.atendidos}   (${deltaConsultas >= 0 ? '+' : ''}${deltaConsultas})`,
+  );
+  console.log(
+    `                   dispersión entre réplicas ±${ruido.toFixed(0)} · ` +
+      (Math.abs(deltaConsultas) < ruido
+        ? 'la diferencia NO es distinguible del ruido del modelo'
+        : 'la diferencia excede el ruido y es un efecto real'),
   );
   console.log(
     `Cierre de jornada  ${formatoHora(base.cierre)} → ${formatoHora(fin.cierre)}`,

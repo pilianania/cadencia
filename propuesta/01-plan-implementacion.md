@@ -6,12 +6,14 @@ El análisis descompone el problema en tres palancas y mide el efecto aislado de
 cada una. Esa descomposición es analítica: **no constituye una secuencia de
 despliegue.**
 
-| Escenario simulado | Espera media |
-|---|---|
-| Situación actual | 30,7 min |
-| + Pool de reasignación | 23,7 min |
-| + Confirmación activa, sin rediseñar la grilla | **27,4 min** |
-| + Rediseño de grilla | 19,3 min |
+| Escenario simulado | Espera media | Dispersión |
+|---|---|---|
+| Situación actual | 32,1 min | ±4,4 |
+| + Pool de reasignación | 23,4 min | ±4,4 |
+| + Confirmación activa, sin rediseñar la grilla | **30,7 min** | ±5,5 |
+| + Rediseño de grilla | 20,2 min | ±1,4 |
+
+*Promedio de 8 réplicas de la jornada completa.*
 
 Implementar la confirmación activa y detenerse allí **incrementa la espera**: los
 pacientes recuperados ingresan en una agenda construida bajo el supuesto de que
@@ -118,7 +120,7 @@ apreciación.
 Los consultorios de una misma especialidad dejan de operar como colas
 independientes y pasan a atender como un recurso único.
 
-**Efecto medido:** espera media de 30,7 a 23,7 minutos. Percentil 90 de 75 a 58
+**Efecto medido:** espera media de 32,1 a 23,4 minutos. Percentil 90 de 78 a 55
 minutos.
 
 No modifica la grilla de turnos ni los acuerdos con los profesionales. Es la fase
@@ -156,13 +158,13 @@ calendario generado en el momento de la reserva.
 deja de ser necesario. El factor pasa a ser un parámetro por sede que el sistema
 recomienda a partir del ausentismo medido.
 
-**Efecto acumulado:** espera media de 30,7 a 19,3 minutos (−37%). Franja 14–17 h
-de 34,2 a 19,4 minutos (−43%). Percentil 90 de 75 a 42 minutos. La jornada cierra
+**Efecto acumulado:** espera media de 32,1 a 20,2 minutos (−37%). Franja 14–17 h
+de 32,9 a 19,8 minutos (−40%). Percentil 90 de 78 a 48 minutos. La jornada cierra
 en horario.
 
-**Contrapartida:** reducción de aproximadamente 56 consultas diarias de capacidad
-nominal. Con lista de espera disponible, los turnos se cubren y el costo tiende a
-cero.
+**Sobre el volumen:** la reducción es de 9 consultas diarias sobre una dispersión
+de ±71 entre réplicas, es decir, no distinguible de cero. La tasa de uso efectivo
+de la agenda pasa de 63% a 72%, compensando la reducción de turnos ofrecidos.
 
 ### Criterios de salida
 
@@ -196,7 +198,7 @@ Ordenados por exposición.
 | | |
 |---|---|
 | Probabilidad | Alta |
-| Impacto | Alto — retroceso medido de 23,7 a 27,4 minutos |
+| Impacto | Alto — retroceso medido de 23,4 a 30,7 minutos |
 | Mitigación | Confirmación activa y rediseño de grilla constituyen una única fase con un único criterio de salida |
 
 Es un riesgo de gobierno del proyecto, no técnico. La presión por anticipar la

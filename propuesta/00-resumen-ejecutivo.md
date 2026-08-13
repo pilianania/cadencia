@@ -7,8 +7,8 @@
 
 Un sistema que **reasigna pacientes entre consultorios en tiempo real**, obtiene
 confirmación anticipada de asistencia y rediseña la grilla en función del
-ausentismo medido. **Reduce a la mitad la espera en el horario de mayor
-congestión.**
+ausentismo medido. **Reduce la espera del paciente entre un 34% y un 40%, sin
+pérdida medible de volumen de atención.**
 
 ---
 
@@ -16,22 +16,32 @@ congestión.**
 
 | Indicador | Hoy | Con la solución | |
 |---|---|---|---|
-| **Espera a las 17 h**, el horario crítico | 42 min | **21 min** | **−49%** |
-| Espera media de la franja 14–17 h | 34 min | **19 min** | −43% |
-| Espera media de la jornada | 31 min | **19 min** | −37% |
-| Percentil 90 — el paciente peor atendido | 75 min | **42 min** | −44% |
-| Pacientes atendidos dentro de los 15 min de su turno | 47% | **55%** | +8 pts |
-| Ausencias sin aviso | 33% | **21%** | −12 pts |
+| **Espera a las 17 h**, el horario crítico | 40 min | **27 min** | **−34%** |
+| Espera media de la franja 14–17 h | 33 min | **20 min** | −40% |
+| Espera media de la jornada | 32 min | **20 min** | −37% |
+| Percentil 90 — el paciente peor atendido | 78 min | **48 min** | −38% |
+| Pacientes atendidos dentro de los 15 min de su turno | 43% | **54%** | +11 pts |
+| Ausencias sin aviso | 31% | **21%** | −10 pts |
 | Cierre efectivo de la jornada | 20:00 | **19:00** | −1 h |
+| Consultas atendidas por día | 800 | **791** | *sin cambio significativo* |
 
-**Contrapartida, declarada por anticipado:** dejar de sobreagendar reduce la
-capacidad nominal en aproximadamente 56 consultas diarias. Si la red opera con
-lista de espera, esos turnos se cubren con demanda existente y el costo tiende a
-cero. Si no, es una decisión explícita entre volumen y experiencia.
+**Sobre el volumen de atención.** Dejar de sobreagendar reduce la cantidad de
+turnos ofrecidos, lo que podría suponer una pérdida de facturación. **La
+simulación no la encuentra:** la diferencia es de 9 consultas diarias sobre una
+dispersión de ±71 entre réplicas, es decir, no distinguible de cero.
+
+La explicación es que el sobreagendamiento no agrega capacidad real: agrega
+turnos que en un tercio de los casos nadie ocupa. Al reducir el ausentismo, la
+**tasa de uso efectivo de la agenda pasa de 63% a 72%**, y ese aumento de
+eficiencia compensa la reducción de turnos ofrecidos.
 
 > *Los tres primeros indicadores miden lo mismo sobre distintos recortes horarios.
 > Se reportan los tres para evitar que la mejora aparezca sobredimensionada al
 > medirse únicamente sobre el peor tramo del día.*
+>
+> *Todos los valores son el promedio de 8 réplicas de la jornada completa. Se
+> reporta la dispersión entre réplicas para distinguir un efecto real de una
+> diferencia que cabe dentro del error del modelo.*
 
 ---
 
@@ -54,9 +64,9 @@ eso es lo que reduce la espera.**
 
 ### Y la espera no es constante: es una cascada
 
-| 08:00 | 10:00 | 12:00 | 14:00 | 16:00 | 17:00 | 18:00 |
+| 08:00 | 10:00 | 12:00 | 13:00 | 15:00 | 17:00 | 18:00 |
 |---|---|---|---|---|---|---|
-| 5 min | 19 min | 28 min | 28 min | 39 min | **42 min** | 60 min |
+| 5 min | 22 min | 35 min | 43 min | 29 min | **40 min** | 60 min |
 
 A las 9 de la mañana la agenda está en horario. **Cada hora hereda el retraso de
 la anterior y la jornada nunca se recupera dentro del día.**
@@ -80,7 +90,7 @@ el cambio comunicándoselo al paciente. **No modifica la grilla de turnos ni los
 acuerdos con los profesionales**, por lo que es la intervención de menor fricción
 y la de resultado más rápido.
 
-**Efecto aislado: espera media de 31 a 24 minutos.**
+**Efecto aislado: espera media de 32 a 23 minutos, sin modificar la agenda.**
 
 ### 2 · Confirmación activa
 
@@ -98,7 +108,7 @@ factor pasa a ser un parámetro por sede que el sistema recomienda a partir del
 ausentismo efectivamente medido, en lugar de un valor heredado.
 
 > **Las intervenciones 2 y 3 se despliegan juntas.** Reducir ausencias sin
-> rediseñar la grilla **incrementa** la espera, de 24 a 27 minutos: los pacientes
+> rediseñar la grilla **incrementa** la espera, de 23 a 31 minutos: los pacientes
 > recuperados ingresan en una agenda construida bajo el supuesto de que no
 > concurrirían. Es un resultado contraintuitivo con consecuencias operativas
 > directas, desarrollado en el plan de implementación.
@@ -151,12 +161,18 @@ espera percibida sin consumir capacidad instalada.**
 
 ## Nota sobre el origen de las cifras
 
-Los resultados provienen de simular la jornada completa de la red sobre la misma
-población de pacientes, las mismas duraciones de consulta y las mismas llegadas
-en todos los escenarios. La única variable entre ellos es la política aplicada.
+Los resultados provienen de simular la jornada completa de la red minuto a
+minuto, aplicando en cada escenario una política distinta sobre la misma
+estructura de sedes, consultorios y especialidades.
 
-El modelo está **calibrado contra la situación reportada**: arroja 42 minutos de
-espera a las 17 horas y 33% de ausencias, frente a los 45 minutos y 30% informados
+Las intervenciones que modifican la grilla de turnos generan necesariamente una
+agenda distinta, por lo que la comparación entre escenarios no es exacta. Para
+corregirlo, **cada escenario se ejecuta 8 veces con poblaciones distintas** y se
+reporta el promedio junto con su dispersión. Una única corrida no permitiría
+distinguir el efecto de una política del ruido propio de la generación.
+
+El modelo está **calibrado contra la situación reportada**: arroja 40 minutos de
+espera a las 17 horas y 31% de ausencias, frente a los 45 minutos y 30% informados
 en la reunión. Esa correspondencia es lo que permite que las mejoras proyectadas
 sean comparables y no declarativas.
 

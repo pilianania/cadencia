@@ -55,9 +55,9 @@ por su nivel de utilización:
 
 | Configuración | Espera base | Con la propuesta | Mejora |
 |---|---|---|---|
-| Red completa | 30,7 min | 19,3 min | −37% |
-| Subconjunto de mayor congestión | 39,5 min | 19,4 min | −51% |
-| Capacidad constante con demanda reducida a la mitad | 56,8 min | — | desciende a 4,2 min sin intervención |
+| Red completa *(8 réplicas)* | 32,1 min | 20,2 min | −37% |
+| Subconjunto de mayor congestión *(réplica única)* | 39,5 min | 19,4 min | −51% |
+| Capacidad constante con demanda reducida a la mitad *(réplica única)* | 56,8 min | — | desciende a 4,2 min sin intervención |
 
 - El beneficio absoluto escala con el volumen.
 - El porcentaje de mejora depende del nivel de congestión, no del tamaño.
@@ -144,11 +144,12 @@ plan se sostiene; cambia el origen de la mejora.
 |---|---|
 | Asumido | 30% |
 | Rango | 23% – 34% |
-| Fuente | Cifra reportada en la reunión inicial. Consistente con [Giunta et al., Hospital Italiano de Buenos Aires / CONICET](https://bicyt.conicet.gov.ar/fichas/produccion/8748547), que estima 23–34% en un sistema de salud argentino |
+| Fuente | Cifra reportada en la reunión inicial. Consistente con [Giunta et al., Hospital Italiano de Buenos Aires / CONICET](https://bicyt.conicet.gov.ar/fichas/produccion/8748547), que estima 23–34% en un sistema de salud argentino, y con un [análisis sobre 500.000 turnos de clínicas e instituciones argentinas](https://www.cronista.com/infotechnology/it-business/le-encontraron-la-vuelta-al-drama-de-conseguir-un-turno-medico-en-la-argentina-como-lo-hacen-y-por-que-su-idea-ya-vale-millones/) que reporta que uno de cada tres pacientes no concurre |
 | Confianza | Alta |
 
 Es el supuesto mejor respaldado del modelo: la cifra aportada por la institución
-se ubica dentro del rango publicado en literatura académica local. Como
+coincide con un dataset de industria de 500.000 casos y se ubica dentro del rango
+publicado en literatura académica local. Como
 referencia de la dispersión entre instituciones, un [hospital municipal reportó
 16,64% en consultorios externos](https://laopinion.com.ar/hospital-este-ano-se-dieron-mas-de-47-mil-turnos-para-consultorios-externos-y-hubo-un-1664-de-ausentismo/).
 
@@ -302,13 +303,31 @@ Ordenada por impacto sobre las conclusiones.
 Los siguientes valores no son supuestos: se obtienen de la simulación y son
 reproducibles.
 
-| Indicador | Actual | Con la propuesta |
-|---|---|---|
-| Espera media percibida | 30,7 min | 19,3 min (−37%) |
-| Espera franja 14–17 h | 34,2 min | 19,4 min (−43%) |
-| Percentil 90 | 75 min | 42 min |
-| Atendidos dentro de los 15 min | 47% | 55% |
-| Consultas diarias | 868 | 812 (−56) |
+Todos los valores son el **promedio de 8 réplicas** de la jornada completa, con
+su dispersión entre réplicas.
+
+| Indicador | Actual | Con la propuesta | Dispersión |
+|---|---|---|---|
+| Espera media percibida | 32,1 min | 20,2 min (−37%) | ±4,4 / ±1,4 |
+| Espera franja 14–17 h | 32,9 min | 19,8 min (−40%) | — |
+| Espera a las 17 h | 40,4 min | 26,6 min (−34%) | — |
+| Percentil 90 | 78 min | 48 min | — |
+| Atendidos dentro de los 15 min | 43% | 54% | — |
+| Consultas diarias | 800 | 791 (−9) | **±71** |
+
+**Sobre la última fila.** La reducción de volumen es de 9 consultas diarias sobre
+una dispersión de ±71 entre réplicas: **no es distinguible de cero**. El
+sobreagendamiento no aporta capacidad real, sino turnos que en un tercio de los
+casos nadie ocupa; al reducirse el ausentismo, la tasa de uso efectivo de la
+agenda pasa de 63% a 72% y compensa la reducción de turnos ofrecidos.
+
+Una caída de volumen consistente aparece únicamente si se elimina por completo el
+sobreagendamiento, configuración que no se propone.
+
+**Nota metodológica.** Los escenarios que modifican la grilla generan una agenda
+distinta, de modo que la comparación no es exacta sobre la misma población. Las
+réplicas corrigen ese efecto: una única corrida produce diferencias del orden del
+ruido de generación y puede arrojar resultados inconsistentes.
 
 Son consecuencia de los supuestos precedentes. Modificar un supuesto modifica
 estos valores; el modelo los recalcula.
