@@ -18,12 +18,8 @@ consultorio administra su propia cola.
 liberarse uno, el sistema identifica al paciente de mayor espera acumulada en toda
 la sede y propone el movimiento.
 
-**Efecto medido:** espera media de la jornada de 32,1 a 23,4 minutos. Percentil 90
-de 78 a 55. En el pico de las 17 horas, de 40 a 30 minutos.
-
-*La media de la jornada es inferior a los 45 minutos reportados porque incorpora
-las primeras horas, en las que la agenda opera en horario. El detalle de la curva
-figura en el mecanismo siguiente.*
+**Efecto medido:** espera media de la jornada de 44,1 a 34,8 minutos. Percentil 90
+de 104 a 81. En el pico de las 17 horas, de 57 a 46 minutos.
 
 **Sin modificar la agenda ni los acuerdos con los profesionales.**
 
@@ -53,12 +49,13 @@ días en que los pacientes concurren, la sala se satura.
 entonces el factor de sobreagenda puede bajar. El sistema lo recomienda por sede a
 partir del ausentismo efectivamente medido, no de un valor heredado.
 
-**Efecto acumulado con los tres mecanismos:** espera media de 32,1 a 20,2 minutos
-(−37%). Franja de la tarde de 32,9 a 19,8 (−40%).
+**Efecto acumulado con los tres mecanismos:** espera media de 44,1 a 29,9 minutos
+(−32%). Franja de la tarde de 47,5 a 30,9 (−35%).
 
 **El orden es obligatorio.** Reducir el ausentismo sin rediseñar la grilla lleva la
-espera de 23,4 a 30,7 minutos: los pacientes recuperados ingresan en una agenda
-construida bajo el supuesto de que no concurrirían.
+espera de 34,8 a 44,9 minutos —anulando la ganancia completa del mecanismo
+anterior—: los pacientes recuperados ingresan en una agenda construida bajo el
+supuesto de que no concurrirían.
 
 ### Mecanismo 4 — Reducir la espera percibida, que es la que se recuerda
 
@@ -110,7 +107,7 @@ ausencia sin aviso es un turno que quedó vacío mientras alguien lo esperaba.
 
 La confirmación activa convierte parte de esas ausencias en avisos anticipados,
 que **liberan el turno con tiempo suficiente para reasignarlo**. En el modelo, los
-turnos liberados con aviso pasan de 5,5% a 9,4% de la agenda.
+turnos liberados con aviso pasan de 5,0% a 9,3% de la agenda.
 
 Cuantificar la reducción del tiempo hasta obtener turno requiere conocer la
 demanda insatisfecha de la red, dato que no fue provisto.
@@ -208,7 +205,7 @@ autenticado.
 
 La secuencia natural de implementación —empezar por los recordatorios, que es lo
 técnicamente más simple— **empeora el indicador que la institución quiere
-mejorar**: lleva la espera de 23,4 a 30,7 minutos.
+mejorar**: lleva la espera de 34,8 a 44,9 minutos, anulando la ganancia previa.
 
 Es un resultado contraintuitivo que solo aparece al simular la interacción entre
 las palancas. Una propuesta que ofrezca recordatorios automáticos como primera
@@ -270,11 +267,10 @@ resultado**, que es lo que la línea de base de la fase 0 habilita.
 
 | Dimensión | Resultado |
 |---|---|
-| Espera media de la jornada | −37% |
-| Espera en la franja de la tarde | −40% |
-| Percentil 90 | de 78 a 48 minutos |
-| Pacientes atendidos dentro de los 15 min | de 43% a 54% |
-| Ausencias sin aviso | de 31% a 21% |
-| Uso efectivo de la agenda | de 63% a 72% |
+| Espera media de la jornada | de 44 a 30 min (−32%) |
+| Espera en la franja de la tarde | de 48 a 31 min (−35%) |
+| Percentil 90 | de 104 a 68 minutos |
+| Pacientes atendidos dentro de los 15 min | de 35% a 42% |
+| Ausencias sin aviso | de 30% a 20% |
+| Uso efectivo de la agenda | de 65% a 71% |
 | Volumen de atención | sin variación significativa |
-| Cierre de la jornada | una hora antes |

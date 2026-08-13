@@ -8,22 +8,19 @@ despliegue.**
 
 | Escenario simulado | Media de la jornada | A las 17 h |
 |---|---|---|
-| Situación actual | 32,1 min ±4,4 | **40 min** |
-| + Pool de reasignación | 23,4 min ±4,4 | 30 min |
-| + Confirmación activa, sin rediseñar la grilla | **30,7 min** ±5,5 | 38 min |
-| + Rediseño de grilla | 20,2 min ±1,4 | 27 min |
+| Situación actual | 44,1 min ±6,2 | **57 min** |
+| + Pool de reasignación | 34,8 min ±6,9 | 46 min |
+| + Confirmación activa, sin rediseñar la grilla | **44,9 min** ±8,3 | 58 min |
+| + Rediseño de grilla | 29,9 min ±2,3 | 40 min |
 
 *Promedio de 8 réplicas de la jornada completa.*
 
-> **Por qué la media de la jornada no es 45 minutos.** La cifra reportada
-> corresponde al pico de la tarde, que es cuando se generan los reclamos, no al
-> promedio del día. El modelo arroja 40 minutos a las 17 horas y 60 a las 18,
-> mientras que a las 9 de la mañana la agenda opera en horario. La media de la
-> jornada es necesariamente inferior porque incorpora las primeras horas.
+> **El modelo está calibrado contra la cifra reportada.** La media de la jornada
+> en la situación actual es de 44,1 minutos, frente a los 45 informados. La
+> columna de las 17 horas muestra el pico —57 minutos—, que es el momento en que
+> se concentran los reclamos.
 >
-> Se utiliza la media para comparar escenarios porque es el indicador más
-> estable; la columna de las 17 horas permite el contraste con la experiencia
-> reportada. Ambas conducen a la misma conclusión sobre el orden de las fases.
+> Ambos indicadores conducen a la misma conclusión sobre el orden de las fases.
 
 Implementar la confirmación activa y detenerse allí **incrementa la espera**: los
 pacientes recuperados ingresan en una agenda construida bajo el supuesto de que
@@ -130,7 +127,7 @@ apreciación.
 Los consultorios de una misma especialidad dejan de operar como colas
 independientes y pasan a atender como un recurso único.
 
-**Efecto medido:** espera media de 32,1 a 23,4 minutos. Percentil 90 de 78 a 55
+**Efecto medido:** espera media de 44,1 a 34,8 minutos. Percentil 90 de 104 a 81
 minutos.
 
 No modifica la grilla de turnos ni los acuerdos con los profesionales. Es la fase
@@ -168,18 +165,17 @@ calendario generado en el momento de la reserva.
 deja de ser necesario. El factor pasa a ser un parámetro por sede que el sistema
 recomienda a partir del ausentismo medido.
 
-**Efecto acumulado:** espera media de 32,1 a 20,2 minutos (−37%). Franja 14–17 h
-de 32,9 a 19,8 minutos (−40%). Percentil 90 de 78 a 48 minutos. La jornada cierra
-en horario.
+**Efecto acumulado:** espera media de 44,1 a 29,9 minutos (−32%). Franja 14–17 h
+de 47,5 a 30,9 minutos (−35%). Percentil 90 de 104 a 68 minutos.
 
-**Sobre el volumen:** la reducción es de 9 consultas diarias sobre una dispersión
+**Sobre el volumen:** la reducción es de 5 consultas diarias sobre una dispersión
 de ±71 entre réplicas, es decir, no distinguible de cero. La tasa de uso efectivo
-de la agenda pasa de 63% a 72%, compensando la reducción de turnos ofrecidos.
+de la agenda pasa de 65% a 71%, compensando la reducción de turnos ofrecidos.
 
 ### Criterios de salida
 
 - [ ] Ausentismo por debajo del 22%
-- [ ] Espera media por debajo de 20 minutos en al menos 6 de las 8 sedes
+- [ ] Espera media por debajo de 32 minutos en al menos 6 de las 8 sedes
 - [ ] Ocupación de consultorio sin caída superior a 3 puntos
 
 ---
@@ -208,7 +204,7 @@ Ordenados por exposición.
 | | |
 |---|---|
 | Probabilidad | Alta |
-| Impacto | Alto — retroceso medido de 23,4 a 30,7 minutos |
+| Impacto | Alto — retroceso medido de 34,8 a 44,9 minutos, que anula la ganancia de la fase 1 |
 | Mitigación | Confirmación activa y rediseño de grilla constituyen una única fase con un único criterio de salida |
 
 Es un riesgo de gobierno del proyecto, no técnico. La presión por anticipar la

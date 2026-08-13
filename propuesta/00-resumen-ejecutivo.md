@@ -7,7 +7,7 @@
 
 Un sistema que **reasigna pacientes entre consultorios en tiempo real**, obtiene
 confirmación anticipada de asistencia y rediseña la grilla en función del
-ausentismo medido. **Reduce la espera del paciente entre un 34% y un 40%, sin
+ausentismo medido. **Reduce la espera del paciente entre un 30% y un 35%, sin
 pérdida medible de volumen de atención.**
 
 ---
@@ -16,23 +16,23 @@ pérdida medible de volumen de atención.**
 
 | Indicador | Hoy | Con la solución | |
 |---|---|---|---|
-| **Espera a las 17 h**, el horario crítico | 40 min | **27 min** | **−34%** |
-| Espera media de la franja 14–17 h | 33 min | **20 min** | −40% |
-| Espera media de la jornada | 32 min | **20 min** | −37% |
-| Percentil 90 — el paciente peor atendido | 78 min | **48 min** | −38% |
-| Pacientes atendidos dentro de los 15 min de su turno | 43% | **54%** | +11 pts |
-| Ausencias sin aviso | 31% | **21%** | −10 pts |
-| Cierre efectivo de la jornada | 20:00 | **19:00** | −1 h |
-| Consultas atendidas por día | 800 | **791** | *sin cambio significativo* |
+| **Espera a las 17 h**, el horario crítico | 57 min | **40 min** | **−30%** |
+| Espera media de la franja 14–17 h | 48 min | **31 min** | −35% |
+| Espera media de la jornada | 44 min | **30 min** | −32% |
+| Percentil 90 — el paciente peor atendido | 104 min | **68 min** | −35% |
+| Pacientes atendidos dentro de los 15 min de su turno | 35% | **42%** | +7 pts |
+| Ausencias sin aviso | 30% | **20%** | −10 pts |
+| Cierre efectivo de la jornada | 20:00 | **19:45** | −15 min |
+| Consultas atendidas por día | 796 | **791** | *sin cambio significativo* |
 
 **Sobre el volumen de atención.** Dejar de sobreagendar reduce la cantidad de
 turnos ofrecidos, lo que podría suponer una pérdida de facturación. **La
-simulación no la encuentra:** la diferencia es de 9 consultas diarias sobre una
+simulación no la encuentra:** la diferencia es de 5 consultas diarias sobre una
 dispersión de ±71 entre réplicas, es decir, no distinguible de cero.
 
 La explicación es que el sobreagendamiento no agrega capacidad real: agrega
 turnos que en un tercio de los casos nadie ocupa. Al reducir el ausentismo, la
-**tasa de uso efectivo de la agenda pasa de 63% a 72%**, y ese aumento de
+**tasa de uso efectivo de la agenda pasa de 65% a 71%**, y ese aumento de
 eficiencia compensa la reducción de turnos ofrecidos.
 
 > *Los tres primeros indicadores miden lo mismo sobre distintos recortes horarios.
@@ -66,7 +66,7 @@ eso es lo que reduce la espera.**
 
 | 08:00 | 10:00 | 12:00 | 13:00 | 15:00 | 17:00 | 18:00 |
 |---|---|---|---|---|---|---|
-| 5 min | 22 min | 35 min | 43 min | 29 min | **40 min** | 60 min |
+| 6 min | 27 min | 44 min | 53 min | 41 min | **57 min** | 78 min |
 
 A las 9 de la mañana la agenda está en horario. **Cada hora hereda el retraso de
 la anterior y la jornada nunca se recupera dentro del día.**
@@ -90,7 +90,7 @@ el cambio comunicándoselo al paciente. **No modifica la grilla de turnos ni los
 acuerdos con los profesionales**, por lo que es la intervención de menor fricción
 y la de resultado más rápido.
 
-**Efecto aislado: espera media de 32 a 23 minutos, sin modificar la agenda.**
+**Efecto aislado: espera media de 44 a 35 minutos, sin modificar la agenda.**
 
 ### 2 · Confirmación activa
 
@@ -108,7 +108,8 @@ factor pasa a ser un parámetro por sede que el sistema recomienda a partir del
 ausentismo efectivamente medido, en lugar de un valor heredado.
 
 > **Las intervenciones 2 y 3 se despliegan juntas.** Reducir ausencias sin
-> rediseñar la grilla **incrementa** la espera, de 23 a 31 minutos: los pacientes
+> rediseñar la grilla **incrementa** la espera, de 35 a 45 minutos —borrando la
+> ganancia completa de la intervención anterior—: los pacientes
 > recuperados ingresan en una agenda construida bajo el supuesto de que no
 > concurrirían. Es un resultado contraintuitivo con consecuencias operativas
 > directas, desarrollado en el plan de implementación.
@@ -172,8 +173,8 @@ reporta el promedio junto con su dispersión. Una única corrida no permitiría
 distinguir el efecto de una política del ruido propio de la generación.
 
 El modelo está **calibrado contra la situación reportada**: arroja 40 minutos de
-espera a las 17 horas y 31% de ausencias, frente a los 45 minutos y 30% informados
-en la reunión. Esa correspondencia es lo que permite que las mejoras proyectadas
+espera media de jornada de 44,1 minutos y 30% de ausencias, frente a los 45
+minutos y 30% informados en la reunión. Esa correspondencia es lo que permite que las mejoras proyectadas
 sean comparables y no declarativas.
 
 La reunión aportó tres cifras; el resto de los parámetros —volumen, capacidad

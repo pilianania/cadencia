@@ -2,11 +2,14 @@
  * Generador de la jornada simulada.
  *
  * DECISIÓN DE DISEÑO (defendible):
- * El generador NO produce un día ideal. Está calibrado para reproducir los
- * números que la Directora de Operaciones reportó en la reunión:
- *   · ~45 min de espera promedio
- *   · ~30% de ausencias sin aviso
- *   · consultorios ociosos con pacientes esperando
+ * El generador NO produce un día ideal. Está CALIBRADO contra los números que
+ * la Directora de Operaciones reportó, que son el dato duro disponible:
+ *   · 45 min de espera promedio  → el modelo da 44.1'
+ *   · 30% de ausencias sin aviso → el modelo da 31%
+ *
+ * La calibración va en ese sentido: el brief es el hecho y el modelo se ajusta
+ * a él. Ajustar la interpretación del dato para que encaje con el modelo sería
+ * al revés.
  *
  * El prototipo abre mostrándole al cliente SU situación actual. La propuesta
  * de valor se demuestra sobre ese baseline, no sobre un escenario de laboratorio.
@@ -141,8 +144,8 @@ function generarPaciente(rng: Rng, i: number): Paciente {
 }
 
 /** Duración real de una consulta: nominal, con cola larga hacia arriba. */
-function duracionReal(rng: Rng, cfg: EspecialidadCfg): Minutos {
-  const base = cfg.slot * cfg.sobrecarga;
+function duracionReal(rng: Rng, cfg: EspecialidadCfg, intensidad: number): Minutos {
+  const base = cfg.slot * (1 + (cfg.sobrecarga - 1) * intensidad);
   const ruido = 0.75 + rng() * 0.6; // 0.75× – 1.35×
   // 12% de las consultas se desbordan de verdad (estudio extra, paciente complejo).
   const desborde = rng() < 0.12 ? 1.5 + rng() * 0.8 : 1;
@@ -154,6 +157,22 @@ function duracionReal(rng: Rng, cfg: EspecialidadCfg): Minutos {
  * producto, y se pueden mover por separado para aislar su efecto.
  */
 export interface OpcionesRed {
+  /**
+   * Multiplicador sobre el exceso de la consulta respecto del turno agendado.
+   *
+   * ES EL PARÁMETRO DE CALIBRACIÓN DEL MODELO.
+   * Se ajusta contra el dato duro del brief —45 minutos de espera promedio— y
+   * no al revés. Una primera versión lo dejó en 1 y produjo una media de 32';
+   * en lugar de corregir el modelo se racionalizó que el 45 informado "debía
+   * ser el pico de la tarde". Eso es ajustar la interpretación del dato al
+   * modelo. El brief es el hecho; el modelo se acomoda a él.
+   *
+   * Con 1.5 la media da 44.1', que reproduce lo reportado. La sobrecarga
+   * efectiva resultante (~1.30x) sigue por DEBAJO del 1.5-2x que implica la
+   * evidencia gremial, así que la calibración no fuerza el parámetro fuera de
+   * su rango respaldado: lo acerca.
+   */
+  intensidadSobrecarga?: number;
   /**
    * Cuán agresivamente se sobreagenda para cubrirse de las ausencias.
    * 0 = agenda a la duración prometida · 1 = compensa toda la tasa de ausencia.
@@ -171,10 +190,15 @@ export interface OpcionesRed {
 export const OPCIONES_BASE: Required<OpcionesRed> = {
   factorSobreagenda: 0.35,
   reduccionAusencias: 0,
+  /** Calibrado contra los 45' de espera media reportados. Ver OpcionesRed. */
+  intensidadSobrecarga: 1.5,
 };
 
 export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red {
-  const { factorSobreagenda, reduccionAusencias } = { ...OPCIONES_BASE, ...opciones };
+  const { factorSobreagenda, reduccionAusencias, intensidadSobrecarga } = {
+    ...OPCIONES_BASE,
+    ...opciones,
+  };
   const rng = crearRng(semilla);
 
   const profesionales: Profesional[] = [];
@@ -296,7 +320,7 @@ export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red 
           const adelanto = rng() < 0.78 ? entre(rng, 3, 22) : -entre(rng, 2, 18);
           const checkIn = Math.max(JORNADA.apertura, t - adelanto);
           const inicio = Math.max(t, checkIn, libreA);
-          const fin = inicio + duracionReal(rng, cfg);
+          const fin = inicio + duracionReal(rng, cfg, intensidadSobrecarga);
 
           plan.checkInA = checkIn;
           plan.inicioA = inicio;

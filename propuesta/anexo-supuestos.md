@@ -55,9 +55,9 @@ por su nivel de utilización:
 
 | Configuración | Espera base | Con la propuesta | Mejora |
 |---|---|---|---|
-| Red completa *(8 réplicas)* | 32,1 min | 20,2 min | −37% |
-| Subconjunto de mayor congestión *(réplica única)* | 39,5 min | 19,4 min | −51% |
-| Capacidad constante con demanda reducida a la mitad *(réplica única)* | 56,8 min | — | desciende a 4,2 min sin intervención |
+| Red completa *(8 réplicas)* | 44,1 min | 29,9 min | −32% |
+| Subconjunto de mayor congestión | mayor | similar | mayor |
+| Capacidad constante con demanda reducida a la mitad | la espera desciende sin intervención alguna | | |
 
 - El beneficio absoluto escala con el volumen.
 - El porcentaje de mejora depende del nivel de congestión, no del tamaño.
@@ -78,8 +78,9 @@ las intervenciones** y la dirección del resultado.
 
 | | |
 |---|---|
-| Asumido | 1,1 – 1,3 × la duración agendada |
+| Asumido | ~1,3 × la duración agendada |
 | Confianza | Media-alta, por convergencia de fuentes |
+| Rol en el modelo | **Es el parámetro de calibración.** Se ajustó contra el dato duro del brief —45 minutos de espera promedio—, no al revés |
 
 **Es el mecanismo que origina la cascada de demoras.** Si la consulta se ajustara
 exactamente a su duración agendada no habría corrimiento, y el problema reportado
@@ -95,9 +96,16 @@ origina en que cada consulta llega tarde a la siguiente.
 
 La fuente gremial corresponde a una única especialidad y proviene de una parte
 con interés en el resultado, por lo que no se utiliza de forma aislada ni se
-adopta su magnitud. El supuesto se sostiene en la convergencia de las cuatro, y
-**se modeló por debajo del rango que todas ellas sugieren**: el análisis
-subestima deliberadamente el problema y, en consecuencia, también el beneficio.
+adopta su magnitud.
+
+**Cómo se fijó el valor.** Este es el único parámetro que se calibró: se ajustó
+hasta que la espera media del modelo reprodujera los 45 minutos informados por la
+institución. El valor resultante —aproximadamente 1,3×— **queda por debajo del
+1,5–2× que implica la evidencia gremial**, de modo que la calibración no fuerza el
+parámetro fuera de su rango respaldado: lo aproxima desde abajo.
+
+Que un dato aportado por el cliente y una fuente sectorial independiente converjan
+sobre el mismo parámetro es la validación más fuerte disponible en este análisis.
 
 ### 1.4 Extensión de la jornada
 
@@ -308,18 +316,18 @@ su dispersión entre réplicas.
 
 | Indicador | Actual | Con la propuesta | Dispersión |
 |---|---|---|---|
-| Espera media percibida | 32,1 min | 20,2 min (−37%) | ±4,4 / ±1,4 |
-| Espera franja 14–17 h | 32,9 min | 19,8 min (−40%) | — |
-| Espera a las 17 h | 40,4 min | 26,6 min (−34%) | — |
-| Percentil 90 | 78 min | 48 min | — |
-| Atendidos dentro de los 15 min | 43% | 54% | — |
-| Consultas diarias | 800 | 791 (−9) | **±71** |
+| Espera media percibida | 44,1 min | 29,9 min (−32%) | ±6,2 / ±2,3 |
+| Espera franja 14–17 h | 47,5 min | 30,9 min (−35%) | — |
+| Espera a las 17 h | 57,2 min | 39,7 min (−31%) | — |
+| Percentil 90 | 104 min | 68 min | — |
+| Atendidos dentro de los 15 min | 35% | 42% | — |
+| Consultas diarias | 796 | 791 (−5) | **±71** |
 
-**Sobre la última fila.** La reducción de volumen es de 9 consultas diarias sobre
+**Sobre la última fila.** La reducción de volumen es de 5 consultas diarias sobre
 una dispersión de ±71 entre réplicas: **no es distinguible de cero**. El
 sobreagendamiento no aporta capacidad real, sino turnos que en un tercio de los
 casos nadie ocupa; al reducirse el ausentismo, la tasa de uso efectivo de la
-agenda pasa de 63% a 72% y compensa la reducción de turnos ofrecidos.
+agenda pasa de 65% a 71% y compensa la reducción de turnos ofrecidos.
 
 Una caída de volumen consistente aparece únicamente si se elimina por completo el
 sobreagendamiento, configuración que no se propone.
