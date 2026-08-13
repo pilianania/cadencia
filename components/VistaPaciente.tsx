@@ -26,6 +26,12 @@ import {
   type Turno,
 } from '@/lib/domain';
 import { asignarCodigos, estimar, type Estimacion } from '@/lib/estimacion';
+import {
+  FECHA_DEMO,
+  enlaceDescarga,
+  generarEvento,
+  nombreArchivo,
+} from '@/lib/calendario';
 
 const nombreConsultorio = (id: string) => `Consultorio ${id.split('-c')[1] ?? id}`;
 
@@ -252,6 +258,26 @@ function Telefono({
                     Confirmo que voy
                   </button>
                 )}
+
+                {/* El calendario ataca el olvido —44% de las ausencias— en el
+                    momento de reservar, no 24 h antes. Y la alarma la dispara
+                    el propio teléfono: no depende de que el paciente lea un
+                    mensaje de un número que no conoce. */}
+                <a
+                  href={enlaceDescarga(
+                    generarEvento({
+                      turno,
+                      sedeNombre,
+                      fecha: FECHA_DEMO,
+                      enlace: 'https://cadencia.app/t/' + turno.id,
+                      generadoEn: FECHA_DEMO,
+                    }),
+                  )}
+                  download={nombreArchivo(turno)}
+                  className="block w-full rounded-sm border border-accent/40 bg-surface px-3 py-2 text-center text-[0.8125rem] font-semibold text-accent transition hover:bg-accent-soft"
+                >
+                  Agregar a mi calendario
+                </a>
                 <button
                   type="button"
                   onClick={() => onCancelar(turno.id)}
@@ -261,6 +287,9 @@ function Telefono({
                 </button>
                 <p className="px-1 text-center text-[0.625rem] leading-snug text-ink-faint">
                   Avisar libera el turno para alguien de la lista de espera.
+                  <br />
+                  El evento de calendario no incluye la especialidad ni el
+                  profesional.
                 </p>
               </div>
             )}

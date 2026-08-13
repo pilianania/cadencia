@@ -98,19 +98,46 @@ flexibilidad de reprogramación en vez de avisos.
 
 ### Cómo se mide, y por qué es barato
 
-**Se llama a los ausentes.** Un guion de tres preguntas, aplicado durante dos
-semanas a los turnos no concurridos de la sede piloto.
+**Canal principal: mensaje en la app o WhatsApp**, dentro de las 2 horas del turno
+perdido. Una sola pregunta, respuesta de un toque:
 
-La llamada tiene **doble retorno**, y por eso el costo real es menor que el
-aparente:
+> No pudimos verte hoy a las 10:30. ¿Qué pasó?
+> **Me olvidé · Me surgió algo · No me sentía bien · No pude llegar · Otro**
+>
+> ¿Querés que te demos otro turno? **Sí / No por ahora**
+
+Se descartó el llamado telefónico como canal principal: es caro, intrusivo, y no
+escala a 1.371 turnos diarios. Se reserva para el caso en que la cartera resulte
+mayoritariamente adulta mayor, donde la relación se invierte.
+
+**Doble retorno, y por eso el costo real es menor que el aparente:**
 
 1. Se releva la causa, que es lo que ordena las prioridades del proyecto
-2. **Se recupera el turno**: se reprograma en el momento, que es exactamente lo
-   que la fase 2 va a automatizar después
+2. **Se recupera el turno** en el mismo mensaje — que es exactamente lo que la
+   fase 2 va a automatizar
 
-O sea que el instrumento de medición de la fase 0 es, además, una prueba manual
-del mecanismo de la fase 2. Si llamando no se recupera a nadie, tenemos un dato
-muy valioso antes de haber construido nada.
+El instrumento de medición de la fase 0 es, además, una **prueba manual del
+mecanismo de la fase 2**. Si nadie contesta ni reprograma, tenemos un dato
+carísimo antes de haber construido una sola línea de código.
+
+#### El sesgo que hay que corregir, y que es fácil pasar por alto
+
+**Quien no vino al turno es exactamente quien menos probablemente conteste un
+mensaje.** Y peor: si relevamos causas solo por WhatsApp, estamos midiendo las
+causas **de la gente que lee WhatsApp**, que es precisamente la población donde
+los recordatorios funcionan.
+
+> Mediríamos nuestra propia hipótesis y nos daría que sí.
+
+**Corrección:** una muestra pequeña de los **no respondedores** se contacta por
+teléfono. No se llama a todos —eso es lo caro e innecesario— sino a las
+suficientes como para contrastar si sus causas difieren de las de quienes sí
+contestaron.
+
+Si la distribución es parecida, la medición por mensaje es representativa y se
+usa sola de ahí en adelante. Si difiere, sabemos que la fase 2 va a rendir menos
+de lo previsto en un segmento identificable, y podemos dimensionarlo en vez de
+descubrirlo en producción.
 
 ### Lo mismo para la insatisfacción
 
@@ -123,7 +150,8 @@ las dos últimas son las baratas.
 - [ ] 2 semanas de datos operativos limpios en la sede piloto
 - [ ] Estudio de satisfacción con n suficiente y **causas codificadas**
 - [ ] **Causas de ausencia relevadas localmente**, no tomadas de literatura ajena
-- [ ] Tasa de recuperación de turno por llamado medida (prueba manual de la fase 2)
+- [ ] Tasa de recuperación de turno por mensaje medida (prueba manual de la fase 2)
+- [ ] Sesgo de no respuesta contrastado contra una muestra telefónica
 - [ ] La espera medida coincide con la percibida por el equipo (si no, el modelo está mal)
 - [ ] **Profundidad de pool medida**: cuántos consultorios comparten especialidad por sede
 - [ ] Recepción usa el tablero sin asistencia
