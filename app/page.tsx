@@ -6,6 +6,7 @@ import { GraficoEscenarios, TablaResumen } from '@/components/GraficoEscenarios'
 import { PanelAlertas } from '@/components/PanelAlertas';
 import { PanelOptimizacion } from '@/components/PanelOptimizacion';
 import { TiraMetricas } from '@/components/TiraMetricas';
+import { VistaPaciente } from '@/components/VistaPaciente';
 import { VistaRed, construirFilas } from '@/components/VistaRed';
 import { generarAlertas, type Alerta } from '@/lib/alertas';
 import {
@@ -34,17 +35,26 @@ const HORA_INICIAL: Minutos = 11 * 60 + 20;
 interface Ajuste {
   inicioA?: Minutos;
   ausente?: boolean;
+  /** El paciente avisó que no viene: el turno se libera. */
+  cancelado?: boolean;
   /** Reasignación a otro consultorio de la misma especialidad. */
   consultorioId?: string;
 }
 
-type Vista = 'red' | 'sede' | 'escenarios';
+type Vista = 'red' | 'sede' | 'escenarios' | 'paciente';
 
 function aplicarAjuste(p: TurnoPlan, aj: Ajuste | undefined, ahora: Minutos): Turno {
   if (!aj) return proyectar(p, ahora);
 
   if (aj.ausente) {
     return proyectar({ ...p, desenlace: 'ausente', marcadoAusenteA: p.agendadoA }, ahora);
+  }
+
+  /* Avisar no es lo mismo que faltar: el turno se libera y puede reasignarse
+   * a la lista de espera. Colapsar ambos casos haría imposible medir —y
+   * cobrar— el efecto de los recordatorios. */
+  if (aj.cancelado) {
+    return proyectar({ ...p, desenlace: 'cancelado', canceladoA: ahora }, ahora);
   }
 
   const base: TurnoPlan = aj.consultorioId
@@ -186,6 +196,33 @@ export default function Tablero() {
     setPlanAplicado(true);
   }, [plan, turnos]);
 
+  /* Vista de paciente: a quién le estamos mirando la pantalla, y quiénes
+   * confirmaron asistencia. */
+  const [pacienteId, setPacienteId] = useState<string | null>(null);
+  const [confirmados, setConfirmados] = useState<Set<string>>(new Set());
+
+  const turnoPaciente = useMemo(() => {
+    const elegido = pacienteId ? turnos.find((t) => t.id === pacienteId) : undefined;
+    if (elegido) return elegido;
+    /* Sin selección explícita se muestra a quien más está esperando, porque
+     * es el caso que importa. Si la sala está vacía se cae al próximo turno
+     * agendado: el selector ofrece ambos estados, y quedarse solo con los que
+     * esperan dejaba el teléfono en blanco con una opción elegida arriba. */
+    const porHora = (a: Turno, b: Turno) => a.agendadoA - b.agendadoA;
+    return (
+      turnos.filter((t) => t.estado === 'en_espera').sort(porHora)[0] ??
+      turnos.filter((t) => t.estado === 'agendado').sort(porHora)[0]
+    );
+  }, [pacienteId, turnos]);
+
+  const confirmar = useCallback((id: string) => {
+    setConfirmados((prev) => new Set(prev).add(id));
+  }, []);
+
+  const cancelar = useCallback((id: string) => {
+    setAjustes((prev) => ({ ...prev, [id]: { ...prev[id], cancelado: true } }));
+  }, []);
+
   const deshacerPlan = useCallback(() => {
     setAjustes((prev) => {
       const siguiente = { ...prev };
@@ -211,6 +248,7 @@ export default function Tablero() {
                 [
                   ['red', `Red · ${red.sedes.length} sedes`],
                   ['sede', sede.nombre],
+                  ['paciente', 'Paciente'],
                   ['escenarios', 'Escenarios'],
                 ] as const
               ).map(([v, rotulo]) => (
@@ -232,7 +270,7 @@ export default function Tablero() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {vista === 'sede' && (
+            {(vista === 'sede' || vista === 'paciente') && (
               <select
                 value={sedeId}
                 onChange={(e) => setSedeId(e.target.value)}
@@ -291,6 +329,22 @@ export default function Tablero() {
                 <GraficoEscenarios resumenes={resumenes} />
               </>
             )}
+          </>
+        ) : vista === 'paciente' ? (
+          <>
+            <h1 className="sr-only">
+              Vista del paciente — {sede.nombre}, {formatoHora(ahora)}
+            </h1>
+            <VistaPaciente
+              turnos={turnos}
+              turnoSeleccionado={turnoPaciente}
+              ahora={ahora}
+              sedeNombre={sede.nombre}
+              onSeleccionar={setPacienteId}
+              onConfirmar={confirmar}
+              onCancelar={cancelar}
+              confirmados={confirmados}
+            />
           </>
         ) : vista === 'red' ? (
           <>
