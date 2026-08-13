@@ -75,26 +75,62 @@ ausencias y encontró una distribución que cambia las prioridades:
 | Problemas laborales | 5,3% |
 | Transporte | 4,7% |
 
-**Ese 44% es la validación del mecanismo de la fase 2.** La principal causa de
-ausencia no es desinterés ni un problema de acceso: es que la gente se olvida. Un
-recordatorio ataca directamente casi la mitad del problema. No estamos suponiendo
-que los recordatorios sirven — sabemos contra qué causa operan y cuánto pesa.
+**Ese 44% explica el mecanismo de la fase 2.** La principal causa de ausencia no es
+desinterés ni un problema de acceso: es que la gente se olvida. Un recordatorio
+ataca directamente casi la mitad del problema.
 
-Hay que hacer el equivalente para la insatisfacción: no basta con saber que la
-espera molesta, hay que saber si molesta por la duración, por la incertidumbre o
-por la falta de aviso. **Son tres problemas con tres soluciones de costo muy
-distinto**, y la evidencia sugiere que la segunda y la tercera son las baratas.
+**Pero esa distribución es de otra institución, y hay que medirla acá.**
+
+El estudio es del Hospital Italiano de Buenos Aires, cuya población es
+mayoritariamente urbana y de cobertura prepaga. La red del brief tiene sedes en
+CABA, Zona Norte, Sur, Oeste y La Plata: **poblaciones distintas, con acceso al
+transporte y condiciones laborales distintas.**
+
+La diferencia no es académica. Un recordatorio resuelve un olvido; **no resuelve
+un problema de transporte ni una urgencia laboral**. Si en esta red el olvido
+pesara la mitad de lo que pesa en el Italiano, la reducción esperable por
+recordatorios se derrumba y la fase 2 hay que replantearla — quizá hacia
+flexibilidad de reprogramación en vez de avisos.
+
+> **Los dos supuestos están acoplados:** la reducción del 35% por recordatorios
+> solo es coherente si el olvido pesa cerca del 44%. Medir uno sin el otro no
+> sirve.
+
+### Cómo se mide, y por qué es barato
+
+**Se llama a los ausentes.** Un guion de tres preguntas, aplicado durante dos
+semanas a los turnos no concurridos de la sede piloto.
+
+La llamada tiene **doble retorno**, y por eso el costo real es menor que el
+aparente:
+
+1. Se releva la causa, que es lo que ordena las prioridades del proyecto
+2. **Se recupera el turno**: se reprograma en el momento, que es exactamente lo
+   que la fase 2 va a automatizar después
+
+O sea que el instrumento de medición de la fase 0 es, además, una prueba manual
+del mecanismo de la fase 2. Si llamando no se recupera a nadie, tenemos un dato
+muy valioso antes de haber construido nada.
+
+### Lo mismo para la insatisfacción
+
+No basta con saber que la espera molesta: hay que saber si molesta por la
+**duración**, por la **incertidumbre** o por la **falta de aviso**. Son tres
+problemas con tres soluciones de costo muy distinto, y la evidencia sugiere que
+las dos últimas son las baratas.
 
 **Criterio de salida** — sin esto no se avanza:
 - [ ] 2 semanas de datos operativos limpios en la sede piloto
 - [ ] Estudio de satisfacción con n suficiente y **causas codificadas**
+- [ ] **Causas de ausencia relevadas localmente**, no tomadas de literatura ajena
+- [ ] Tasa de recuperación de turno por llamado medida (prueba manual de la fase 2)
 - [ ] La espera medida coincide con la percibida por el equipo (si no, el modelo está mal)
 - [ ] **Profundidad de pool medida**: cuántos consultorios comparten especialidad por sede
 - [ ] Recepción usa el tablero sin asistencia
 
-**Por qué esta fase existe:** dos supuestos con confianza baja —profundidad de pool
-y peso relativo de las causas de insatisfacción— determinan de qué palanca viene el
-resultado. Medirlos cuesta 3 semanas; equivocarse cuesta el proyecto.
+**Por qué esta fase existe:** tres supuestos con confianza baja —profundidad de
+pool, causas de insatisfacción y causas de ausencia— determinan de qué palanca
+viene el resultado. Medirlos cuesta 3 semanas; equivocarse cuesta el proyecto.
 
 **Y hay una razón comercial:** el estudio de base es lo que permite **cobrar por
 resultado**. Sin línea de base medida con instrumento validado, cualquier mejora

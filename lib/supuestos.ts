@@ -171,6 +171,42 @@ export const TASA_AUSENCIA: Supuesto = {
     'publicado. Mueve el tamaño del premio, no la dirección.',
 };
 
+/**
+ * Distribución de causas de ausencia.
+ *
+ * Se toma prestada de otra institución y eso hay que decirlo: Giunta et al.
+ * relevó causas por autorreporte en el Hospital Italiano de Buenos Aires, cuya
+ * población es mayoritariamente urbana y de cobertura prepaga. La red del brief
+ * tiene sedes en CABA, Zona Norte, Sur, Oeste y La Plata: poblaciones distintas,
+ * con acceso al transporte y condiciones laborales distintas.
+ *
+ * ACOPLAMIENTO CON EL SUPUESTO ANTERIOR — no lo habíamos declarado:
+ * la reducción del 35% por recordatorios SOLO es coherente si el olvido pesa
+ * cerca del 44%. Un recordatorio no resuelve un problema de transporte ni una
+ * urgencia laboral. Si en esta red el olvido pesara la mitad, la reducción
+ * esperable se derrumba y la fase 2 hay que replantearla.
+ */
+export const CAUSAS_AUSENCIA: Supuesto<Record<string, number>> = {
+  descripcion: 'Peso relativo de cada causa de ausencia sin aviso',
+  valor: {
+    olvido: 0.44,
+    imprevistos: 0.153,
+    malestar: 0.12,
+    laborales: 0.053,
+    transporte: 0.047,
+  },
+  rango: [{ olvido: 0.2 }, { olvido: 0.6 }],
+  unidad: 'proporción por causa',
+  fuente:
+    'Giunta et al., Hospital Italiano de Buenos Aires: causas por autorreporte. ' +
+    'PRESTADO DE OTRA POBLACIÓN — es evidencia de apoyo, no medición local.',
+  confianza: 'baja',
+  sensibilidad:
+    'Determina qué proporción del ausentismo es ATACABLE con un recordatorio. ' +
+    'El olvido lo es; el transporte y los problemas laborales no. Se mide en la ' +
+    'fase 0 llamando a los ausentes, que además permite recuperar el turno.',
+};
+
 export const REDUCCION_POR_RECORDATORIOS: Supuesto = {
   descripcion: 'Reducción de ausencias atribuible a recordatorios con confirmación',
   valor: 0.35,
