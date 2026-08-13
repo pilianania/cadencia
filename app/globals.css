@@ -1,26 +1,114 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ────────────────────────────────────────────────────────────────────────────
+ * SISTEMA DE DISEÑO — "Sala de operaciones"
+ *
+ * El referente visual no es una app médica ni un SaaS: es un tablero de
+ * operaciones (control de tráfico, pantalla de arribos). Densidad alta,
+ * lectura a distancia, cero decoración.
+ *
+ * El color no es estética: la rampa de severidad ES el dato. Está ordenada
+ * perceptualmente y se sostiene en escala de grises y con daltonismo, porque
+ * en un mostrador nadie compara dos tonos: mira uno y decide.
+ *
+ * Compromiso deliberado con modo claro: el uso real es un mostrador de
+ * recepción a plena luz del día. Un tema oscuro acá sería moda, no criterio.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Superficies */
+  --color-ground: #edf0f3; /* papel frío — no crema, no gris neutro */
+  --color-surface: #ffffff;
+  --color-sunken: #e3e8ed;
+
+  /* Tinta */
+  --color-ink: #0f1a26;
+  --color-ink-soft: #5c6b7d;
+  --color-ink-faint: #8d9aa8;
+  --color-rule: #d8dfe6;
+  --color-rule-strong: #b9c4cf;
+
+  /* Estructura / interacción */
+  --color-accent: #17457a;
+  --color-accent-soft: #dbe6f2;
+
+  /* Rampa de severidad — ordenada, CVD-safe */
+  --color-sev-normal: #0f7b63;
+  --color-sev-leve: #a8791f;
+  --color-sev-moderada: #cc6118;
+  --color-sev-critica: #b3302a;
+  --color-sev-void: #8e97a3; /* ausencia: vacío, no alarma */
+
+  --color-sev-normal-bg: #e2f2ee;
+  --color-sev-leve-bg: #f7edd9;
+  --color-sev-moderada-bg: #fbe7d8;
+  --color-sev-critica-bg: #f9e0de;
+  --color-sev-void-bg: #e8ebef;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv05" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Los números de tiempo siempre alineados en columna. */
+  .tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Etiqueta de sección: mayúsculas espaciadas, el registro de un tablero. */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Pulso de la línea AHORA. Es el único elemento animado de la pantalla:
+   en un tablero operativo, lo que se mueve es lo que reclama atención. */
+@keyframes latido {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.latido {
+  animation: latido 2.4s ease-in-out infinite;
 }
