@@ -58,12 +58,16 @@ export const CONSULTAS_POR_DIA: Supuesto = {
   rango: [900, 1800],
   unidad: 'turnos/día',
   fuente:
-    'Derivado: 8 sedes × 4-6 consultorios × jornada 08-18h con slots de 15-30 min. ' +
-    'El brief no da volumen.',
+    'Derivado de los otros supuestos: 8 sedes × 4-6 consultorios × jornada 08-18h ' +
+    'con slots de 15-30 min. El brief no da volumen.',
   confianza: 'media',
   sensibilidad:
-    'Escala el beneficio absoluto de forma lineal. No cambia los porcentajes de mejora ' +
-    'ni el orden de las fases.',
+    'MEDIDO, y no es lo que uno esperaría. El beneficio ABSOLUTO escala con el volumen, ' +
+    'pero el PORCENTAJE de mejora no depende del tamaño sino de la utilización. ' +
+    'Comprobado: las 8 sedes dan -37%; un subconjunto de 4 sedes más congestionadas ' +
+    '(39,5′ de base contra 30,7′) da -51%. Y con la misma capacidad y la mitad de la ' +
+    'demanda, la espera de una sede cae de 56,8′ a 4,2′: sin congestión no hay nada que ' +
+    'optimizar. Lo que se sostiene ante un error de volumen es el ORDEN DE LAS FASES.',
 };
 
 export const CONSULTORIOS: Supuesto = {
@@ -71,9 +75,63 @@ export const CONSULTORIOS: Supuesto = {
   valor: 42,
   rango: [24, 60],
   unidad: 'consultorios',
-  fuente: 'Derivado: 4-6 por sede. El brief solo dice "8 clínicas".',
+  fuente:
+    'Asunción de 4-6 por sede. El brief solo dice "8 clínicas ambulatorias". ' +
+    'Se calibró para que la utilización resultante quedara apenas por debajo de 1, ' +
+    'que es el régimen congestionado-pero-estable que describe la clienta: si fuera ' +
+    'mayor a 1 la cola crecería sin techo y habría pacientes atendiéndose a las 22h.',
   confianza: 'media',
-  sensibilidad: 'Igual que el volumen: escala el resultado, no cambia la conclusión.',
+  sensibilidad:
+    'Junto con el volumen determina la utilización, que es la variable que realmente ' +
+    'gobierna el resultado. Es el par de supuestos a validar primero en la fase 0.',
+};
+
+export const DURACION_SLOT: Supuesto = {
+  descripcion: 'Duración nominal del turno según especialidad',
+  valor: 20,
+  rango: [15, 30],
+  unidad: 'minutos',
+  fuente:
+    'La duración media de la consulta ambulatoria en Argentina se ubica en torno a los ' +
+    '15 minutos, y los nomencladores toman 20 minutos como referencia operativa. ' +
+    'Se modelaron 15/20/25/30 según especialidad.',
+  confianza: 'alta',
+  sensibilidad:
+    'Cambia la capacidad instalada. Slots más largos con la misma grilla agravan la ' +
+    'congestión; más cortos la alivian pero empeoran la calidad de la consulta.',
+};
+
+export const SOBRECARGA_CONSULTA: Supuesto = {
+  descripcion:
+    'Cuánto excede la consulta real a la duración agendada (multiplicador medio)',
+  valor: 1.2,
+  rango: [1.1, 1.3],
+  unidad: 'multiplicador',
+  fuente:
+    'CONSERVADOR. Una encuesta de la Sociedad Argentina de Cardiología reporta que al ' +
+    '70% de los profesionales se les exige ofrecer turnos de 10-15 minutos, mientras ' +
+    'que consideran que la consulta requiere 20-30. Esa brecha declarada implica un ' +
+    'factor de 1,5 a 2×; modelamos 1,1-1,3×.',
+  confianza: 'alta',
+  sensibilidad:
+    'Es el motor de la cascada: si la consulta dura más que el slot, cada turno empuja ' +
+    'al siguiente. Con factor 1 no habría deriva y el problema del brief no existiría. ' +
+    'Al haber elegido el extremo bajo, subestimamos el problema y por lo tanto también ' +
+    'el beneficio: el caso real es probablemente mejor que el que presentamos.',
+};
+
+export const JORNADA_HORAS: Supuesto = {
+  descripcion: 'Extensión de la jornada de consultorios externos',
+  valor: 10,
+  rango: [8, 12],
+  unidad: 'horas (08:00-18:00)',
+  fuente:
+    'Asunción de horario corrido de consultorios externos. El brief no lo menciona.',
+  confianza: 'media',
+  sensibilidad:
+    'Una jornada partida (mañana y tarde con corte) reiniciaría parcialmente la cascada ' +
+    'al mediodía y bajaría la deriva acumulada. Habría que confirmarlo: cambia la forma ' +
+    'de la curva, no la dirección del resultado.',
 };
 
 export const PROFUNDIDAD_POOL: Supuesto = {
@@ -82,7 +140,13 @@ export const PROFUNDIDAD_POOL: Supuesto = {
   valor: 0.95,
   rango: [0.25, 1],
   unidad: 'proporción',
-  fuente: 'Asunción. Estructura típica de centro ambulatorio mixto.',
+  fuente:
+    'ASUNCIÓN SIN FUENTE — la más débil del modelo, y está declarada como tal. ' +
+    'Se apoya solo en el razonamiento de que un centro ambulatorio con 4-6 consultorios ' +
+    'no sostiene 6 especialidades distintas de tiempo completo: concentra en las de ' +
+    'mayor demanda y las duplica. No encontramos estadística pública de composición ' +
+    'de consultorios por especialidad en centros ambulatorios argentinos. ' +
+    'Es el primer dato a medir en la fase 0.',
   confianza: 'baja',
   sensibilidad:
     'CRÍTICO para la fase 1. Sin pares de la misma especialidad no hay a dónde reasignar ' +
@@ -161,6 +225,9 @@ export const EXISTE_LISTA_DE_ESPERA: Supuesto<boolean> = {
 export const TODOS: Array<Supuesto<number | boolean>> = [
   CONSULTAS_POR_DIA,
   CONSULTORIOS,
+  DURACION_SLOT,
+  SOBRECARGA_CONSULTA,
+  JORNADA_HORAS,
   PROFUNDIDAD_POOL,
   TASA_AUSENCIA,
   REDUCCION_POR_RECORDATORIOS,

@@ -6,7 +6,11 @@
 > 30% de ausencias, 8 sedes— y nada más. Todo el resto del análisis se apoya en
 > supuestos. Declararlos es lo que permite discutirlos.
 >
-> Cada supuesto indica **qué cambia en la conclusión si el valor real es otro**.
+> **Todo supuesto lleva su fuente.** Donde no existe fuente pública lo decimos con
+> esas palabras en lugar de disfrazarlo de estimación: un supuesto declarado como
+> tal se puede discutir, uno disfrazado se descubre en la reunión.
+>
+> Cada supuesto indica además **qué cambia en la conclusión si el valor real es otro**.
 > Los parámetros viven en `lib/supuestos.ts` y el modelo se recalcula con
 > `npm run analisis`: si en la reunión discuten un número, se cambia y se muestra
 > el resultado nuevo en el momento.
@@ -39,26 +43,82 @@ con la palabra "HIPAA" no puede decir lo mismo.
 
 ## 1. Operación
 
-### 1.1 Volumen
+### 1.1 Volumen y capacidad
 
 | | |
 |---|---|
 | **Asumido** | 1.371 turnos/día en la red · 42 consultorios · 171 turnos por sede |
-| **Rango** | 900 – 1.800 turnos/día |
-| **Base** | Derivado de 8 sedes × 4–6 consultorios × jornada 08:00–18:00 con slots de 15–30 min según especialidad |
+| **Rango** | 900 – 1.800 turnos/día · 24 – 60 consultorios |
+| **Base** | Derivado de los supuestos 1.2 y 1.3. El brief solo dice "8 clínicas ambulatorias". La capacidad se calibró para que la **utilización quede apenas por debajo de 1**, que es el régimen congestionado-pero-estable que describe la Directora: por encima de 1 la cola crecería sin techo y habría pacientes atendiéndose a las 22:00 |
 | **Confianza** | Media |
 
-**Sensibilidad:** escala el beneficio absoluto de forma lineal. **No cambia los
-porcentajes de mejora ni el orden de las fases.** Si la red es la mitad de grande,
-todos los resultados se dividen por dos y las conclusiones se mantienen intactas.
+**Sensibilidad — medida, y no es lo intuitivo.**
 
-### 1.2 Profundidad del pool por especialidad ⚠️
+Lo que gobierna el resultado no es el tamaño de la red sino su **utilización**: la
+relación entre demanda y capacidad. Comprobado sobre el simulador:
+
+| Configuración | Espera base | Con las 3 fases | Mejora |
+|---|---|---|---|
+| Red completa (8 sedes, 1.371 turnos, 42 consultorios) | 30,7′ | 19,3′ | **−37%** |
+| Subconjunto más congestionado (4 sedes, 690 turnos, 21 consultorios) | 39,5′ | 19,4′ | **−51%** |
+| Una sede con la **misma** capacidad y **la mitad** de la demanda | 56,8′ | — | la espera cae sola a **4,2′** |
+
+Tres lecturas:
+
+1. **El beneficio absoluto sí escala con el volumen.** Media red, la mitad de los
+   minutos ahorrados.
+2. **El porcentaje de mejora no depende del tamaño, depende de la congestión.**
+   Cuanto más congestionada la sede, más hay para recuperar.
+3. **Sin congestión no hay nada que optimizar.** Si la red tuviera capacidad de
+   sobra, la espera se resolvería sola y este proyecto no haría falta.
+
+Lo que se sostiene ante un error de volumen es **el orden de las fases** y la
+dirección de la conclusión, no la magnitud del porcentaje.
+
+### 1.2 Duración de la consulta
+
+| | |
+|---|---|
+| **Asumido** | 15 / 20 / 25 / 30 minutos según especialidad |
+| **Fuente** | La duración media de la consulta ambulatoria en Argentina se ubica [en torno a los 15 minutos](https://infomed.com.ar/consulta-medica-cuanto-dura-en-promedio/), y los nomencladores toman **20 minutos** como referencia operativa. Ver también el [estudio sobre estimación del tiempo de consulta ambulatoria en clínica médica](https://www.scielo.cl/scielo.php?script=sci_arttext&pid=S0034-98872013000300012) |
+| **Confianza** | **Alta** |
+
+### 1.3 Sobrecarga: cuánto excede la consulta real al turno agendado ⭐
+
+| | |
+|---|---|
+| **Asumido** | 1,1 – 1,3× la duración agendada |
+| **Fuente** | Una encuesta de la **Sociedad Argentina de Cardiología** reporta que al **70% de los profesionales se les exige ofrecer turnos de 10 a 15 minutos**, mientras que consideran que la consulta requiere **20 a 30**. Esa brecha declarada implica un factor de **1,5 a 2×** |
+| **Confianza** | **Alta** |
+
+**Este es el motor de toda la cascada.** Si la consulta durara exactamente lo
+agendado no habría deriva, y el problema que describe el brief no existiría. La
+demora no nace de la impuntualidad ni de las ausencias: nace de que **cada consulta
+llega tarde a la siguiente**.
+
+**Modelamos 1,1–1,3× cuando la evidencia sugiere 1,5–2×.** Elegimos deliberadamente
+el extremo bajo: subestimamos el problema y, por lo tanto, también el beneficio. El
+caso real es probablemente mejor que el que presentamos.
+
+### 1.4 Jornada
+
+| | |
+|---|---|
+| **Asumido** | 08:00 – 18:00 corrido (10 h) |
+| **Fuente** | Asunción. El brief no lo menciona |
+| **Confianza** | Media |
+
+**Sensibilidad:** una jornada partida con corte al mediodía reiniciaría parcialmente
+la cascada y bajaría la deriva acumulada. Cambia la forma de la curva, no la
+dirección del resultado.
+
+### 1.5 Profundidad del pool por especialidad ⚠️
 
 | | |
 |---|---|
 | **Asumido** | 95% de los consultorios comparte especialidad con otro de la misma sede |
 | **Rango** | 25% – 100% |
-| **Base** | Estructura típica de centro ambulatorio mixto: clínica médica como puerta de entrada más especialidades de alta demanda, duplicadas |
+| **Fuente** | **Ninguna. Es el supuesto más débil del modelo y lo declaramos como tal.** Se apoya solo en el razonamiento de que un centro con 4–6 consultorios no sostiene 6 especialidades distintas de tiempo completo: concentra en las de mayor demanda y las duplica. **No encontramos estadística pública** de composición por especialidad en centros ambulatorios argentinos |
 | **Confianza** | **Baja** |
 
 **Sensibilidad — crítica para la fase 1.** El motor de reasignación solo mueve
