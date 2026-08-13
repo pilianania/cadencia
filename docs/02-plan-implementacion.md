@@ -35,18 +35,70 @@ teléfono y planillas. Esta fase no promete mejora, promete **saber**.
 
 **Entregables**
 - Tablero operativo en la sede piloto: agenda del día, estado de turnos, alertas
-- Línea de base medida: espera percibida, espera atribuible, P90, ausencias, ocupación, tiempo muerto
+- Línea de base **operativa**: espera percibida, espera atribuible, P90, ausencias, ocupación, tiempo muerto
+- Línea de base **de satisfacción y sus causas** (ver abajo)
 - Vista de red para la Dirección de Operaciones
 
+### Estudio de línea de base: insatisfacción y causa
+
+**No alcanza con medir minutos.** Hay que medir cuánto molestan y por qué, antes
+de tocar nada. Sin esa medición previa, al final del proyecto vamos a poder
+demostrar que la espera bajó, pero no que la experiencia mejoró — que es lo que
+la Directora pidió textualmente.
+
+Se replica el diseño del [estudio del Hospital El Cruce publicado en la Revista
+Argentina de Salud Pública](https://rasp.msal.gov.ar/rasp/articulos/vol13/AO_GarciaMunitis44.pdf),
+con tres correcciones deliberadas:
+
+| | El Cruce | Nuestra adaptación |
+|---|---|---|
+| Instrumento | **CAHPS** (validado internacionalmente) | El mismo — permite comparar contra literatura publicada en vez de contra nada |
+| Pregunta principal | Satisfacción **global** con el profesional | Satisfacción **específica con la espera**, además de la global |
+| Momento | Post-visita, en sala | Igual, con encuestador ajeno al sector para no sesgar |
+| Muestra | 30,2% de los atendidos en los días de relevamiento | Similar, con muestreo aleatorio simple |
+
+**Por qué cambiamos la pregunta principal:** un instrumento que pregunta por
+satisfacción global va a dar bien y no se va a mover nunca. El propio estudio de
+El Cruce lo muestra —mediana 10/10, sin varianza que explicar— y hay trabajos que
+reportan 95% de satisfacción global con 26% de insatisfacción específica con la
+espera en la misma muestra. **La espera se diluye en el promedio.**
+
+**Además hay que capturar la CAUSA, no solo el puntaje.** Es lo que hace accionable
+el estudio. El trabajo de Giunta et al. en el Hospital Italiano lo hizo para las
+ausencias y encontró una distribución que cambia las prioridades:
+
+| Causa de ausencia | Peso |
+|---|---|
+| **Olvido** | **44%** |
+| Imprevistos | 15,3% |
+| Malestar general | 12% |
+| Problemas laborales | 5,3% |
+| Transporte | 4,7% |
+
+**Ese 44% es la validación del mecanismo de la fase 2.** La principal causa de
+ausencia no es desinterés ni un problema de acceso: es que la gente se olvida. Un
+recordatorio ataca directamente casi la mitad del problema. No estamos suponiendo
+que los recordatorios sirven — sabemos contra qué causa operan y cuánto pesa.
+
+Hay que hacer el equivalente para la insatisfacción: no basta con saber que la
+espera molesta, hay que saber si molesta por la duración, por la incertidumbre o
+por la falta de aviso. **Son tres problemas con tres soluciones de costo muy
+distinto**, y la evidencia sugiere que la segunda y la tercera son las baratas.
+
 **Criterio de salida** — sin esto no se avanza:
-- [ ] 2 semanas de datos limpios en la sede piloto
+- [ ] 2 semanas de datos operativos limpios en la sede piloto
+- [ ] Estudio de satisfacción con n suficiente y **causas codificadas**
 - [ ] La espera medida coincide con la percibida por el equipo (si no, el modelo está mal)
 - [ ] **Profundidad de pool medida**: cuántos consultorios comparten especialidad por sede
 - [ ] Recepción usa el tablero sin asistencia
 
-**Por qué esta fase existe:** el supuesto de profundidad de pool tiene confianza
-baja y determina si la fase 1 rinde. Medirlo cuesta 3 semanas; equivocarse cuesta
-el proyecto.
+**Por qué esta fase existe:** dos supuestos con confianza baja —profundidad de pool
+y peso relativo de las causas de insatisfacción— determinan de qué palanca viene el
+resultado. Medirlos cuesta 3 semanas; equivocarse cuesta el proyecto.
+
+**Y hay una razón comercial:** el estudio de base es lo que permite **cobrar por
+resultado**. Sin línea de base medida con instrumento validado, cualquier mejora
+posterior es una afirmación nuestra contra una percepción del cliente.
 
 ---
 
