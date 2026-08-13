@@ -149,7 +149,32 @@ function duracionReal(rng: Rng, cfg: EspecialidadCfg): Minutos {
   return Math.max(6, Math.round(base * ruido * desborde));
 }
 
-export function generarRed(semilla = 20260813): Red {
+/**
+ * Palancas del escenario. Cada una corresponde a una intervención real del
+ * producto, y se pueden mover por separado para aislar su efecto.
+ */
+export interface OpcionesRed {
+  /**
+   * Cuán agresivamente se sobreagenda para cubrirse de las ausencias.
+   * 0 = agenda a la duración prometida · 1 = compensa toda la tasa de ausencia.
+   * Calibrado en 0.35 contra los valores que reportó la clienta.
+   */
+  factorSobreagenda?: number;
+  /**
+   * Reducción de ausencias por confirmación y recordatorios.
+   * 0 = statu quo · 0.35 = efecto típico documentado para recordatorios
+   * con confirmación activa.
+   */
+  reduccionAusencias?: number;
+}
+
+export const OPCIONES_BASE: Required<OpcionesRed> = {
+  factorSobreagenda: 0.35,
+  reduccionAusencias: 0,
+};
+
+export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red {
+  const { factorSobreagenda, reduccionAusencias } = { ...OPCIONES_BASE, ...opciones };
   const rng = crearRng(semilla);
 
   const profesionales: Profesional[] = [];
@@ -158,10 +183,26 @@ export function generarRed(semilla = 20260813): Red {
   let pacienteIdx = 0;
 
   for (const sede of SEDES) {
-    const cantConsultorios = entre(rng, 3, 6);
+    const cantConsultorios = entre(rng, 4, 6);
+
+    /* Las especialidades se REPITEN dentro de la sede, no se sortean sueltas.
+     * Una sede real no tiene un consultorio de cada cosa: tiene dos o tres de
+     * clínica médica, dos de pediatría. Esa redundancia es justamente lo que
+     * hace posible reasignar un paciente cuando un consultorio se atrasa.
+     * Sin pares de la misma especialidad no hay optimización posible —
+     * la estructura de la oferta es una precondición del producto. */
+    const distintas = Math.max(2, Math.ceil(cantConsultorios / 2));
+    const paleta: EspecialidadCfg[] = [];
+    const usadas = new Set<string>();
+    while (paleta.length < distintas) {
+      const e = elegir(rng, ESPECIALIDADES);
+      if (usadas.has(e.nombre)) continue;
+      usadas.add(e.nombre);
+      paleta.push(e);
+    }
 
     for (let c = 0; c < cantConsultorios; c++) {
-      const cfg = elegir(rng, ESPECIALIDADES);
+      const cfg = paleta[c % paleta.length];
       const profId = `${sede.id}-prof-${c}`;
       const consId = `${sede.id}-c${c + 1}`;
 
@@ -204,8 +245,17 @@ export function generarRed(semilla = 20260813): Red {
        *
        * Consecuencia para el producto: bajar las ausencias es lo que HABILITA
        * dejar de sobreagendar, y eso es lo que baja la espera. El orden de las
-       * fases del plan de implementación se sigue de acá, no al revés. */
-      const paso = Math.max(5, Math.round(cfg.slot * (1 - cfg.tasaAusencia * 0.9)));
+       * fases del plan de implementación se sigue de acá, no al revés.
+       *
+       * CALIBRACIÓN: el factor está en 0.35, no en 1. Con compensación total
+       * la utilización del consultorio supera 1 y la cola crece sin techo
+       * (pacientes atendiéndose a las 20:00). Una clínica real está congestionada,
+       * no divergente: corre apenas por debajo de 1 y arrastra la deuda al día
+       * siguiente. Ese es el régimen que reproduce los números de la clienta. */
+      const paso = Math.max(
+        5,
+        Math.round(cfg.slot * (1 - cfg.tasaAusencia * factorSobreagenda)),
+      );
 
       for (let t = JORNADA.apertura; t < JORNADA.cierre; t += paso) {
         if (t >= almuerzoDesde && t < almuerzoHasta) continue;
@@ -227,13 +277,18 @@ export function generarRed(semilla = 20260813): Red {
           desenlace: 'atendido',
         };
 
+        /* Los recordatorios con confirmación no eliminan la ausencia: la
+         * convierten. Parte del que no iba a venir ahora viene, y parte avisa
+         * con tiempo — y ese aviso es más valioso que la asistencia, porque
+         * libera el slot para la lista de espera. */
+        const tasaEfectiva = cfg.tasaAusencia * (1 - reduccionAusencias);
         const dado = rng();
-        if (dado < cfg.tasaAusencia) {
+        if (dado < tasaEfectiva) {
           // Ausencia sin aviso: nadie se entera hasta que recepción lo marca,
           // y ese hueco es tiempo muerto del profesional.
           plan.desenlace = 'ausente';
           plan.marcadoAusenteA = t + entre(rng, 12, 25);
-        } else if (dado < cfg.tasaAusencia + 0.05) {
+        } else if (dado < tasaEfectiva + 0.05 + cfg.tasaAusencia * reduccionAusencias * 0.4) {
           plan.desenlace = 'cancelado';
           plan.canceladoA = Math.max(JORNADA.apertura, t - entre(rng, 40, 220));
         } else {

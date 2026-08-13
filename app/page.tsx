@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CarrilDeriva } from '@/components/CarrilDeriva';
 import { PanelAlertas } from '@/components/PanelAlertas';
+import { PanelOptimizacion } from '@/components/PanelOptimizacion';
 import { TiraMetricas } from '@/components/TiraMetricas';
-import { generarAlertas } from '@/lib/alertas';
+import { VistaRed, construirFilas } from '@/components/VistaRed';
+import { generarAlertas, type Alerta } from '@/lib/alertas';
 import {
   JORNADA,
   formatoHora,
@@ -13,31 +15,64 @@ import {
   type Turno,
 } from '@/lib/domain';
 import { calcularMetricas, estadoPorConsultorio } from '@/lib/metricas';
-import { generarRed, proyectar } from '@/lib/seed';
-import type { Alerta } from '@/lib/alertas';
+import { planificar } from '@/lib/optimizador';
+import { generarRed, proyectar, type TurnoPlan } from '@/lib/seed';
 
 /** Hora de arranque de la demo: media mañana, con el día ya desordenado. */
 const HORA_INICIAL: Minutos = 11 * 60 + 20;
 
 /**
- * Intervención manual del operador sobre el día.
+ * Intervención manual sobre el día.
  *
- * DECISIÓN: una acción no fija el estado, REESCRIBE EL PLAN. Después se
+ * DECISIÓN: una acción no fija el estado, REESCRIBE EL PLAN, y después se
  * re-proyecta a la hora actual como cualquier otro turno. Por eso el reloj
  * puede seguir corriendo (o retrocederse) después de intervenir sin que el
- * tablero quede incoherente — que es exactamente lo que rompe en un mockup.
+ * tablero quede incoherente — que es lo que rompe en un mockup.
  */
 interface Ajuste {
   inicioA?: Minutos;
   ausente?: boolean;
+  /** Reasignación a otro consultorio de la misma especialidad. */
+  consultorioId?: string;
+}
+
+type Vista = 'red' | 'sede';
+
+function aplicarAjuste(p: TurnoPlan, aj: Ajuste | undefined, ahora: Minutos): Turno {
+  if (!aj) return proyectar(p, ahora);
+
+  if (aj.ausente) {
+    return proyectar({ ...p, desenlace: 'ausente', marcadoAusenteA: p.agendadoA }, ahora);
+  }
+
+  const base: TurnoPlan = aj.consultorioId
+    ? { ...p, consultorioId: aj.consultorioId }
+    : p;
+
+  if (aj.inicioA !== undefined) {
+    return proyectar(
+      {
+        ...base,
+        desenlace: 'atendido',
+        checkInA: base.checkInA ?? base.agendadoA,
+        inicioA: aj.inicioA,
+        finA: aj.inicioA + base.duracionAgendada,
+      },
+      ahora,
+    );
+  }
+  return proyectar(base, ahora);
 }
 
 export default function Tablero() {
   const red = useMemo(() => generarRed(), []);
+  const [vista, setVista] = useState<Vista>('red');
   const [sedeId, setSedeId] = useState(red.sedes[0].id);
   const [ahora, setAhora] = useState<Minutos>(HORA_INICIAL);
   const [corriendo, setCorriendo] = useState(true);
   const [ajustes, setAjustes] = useState<Record<string, Ajuste>>({});
+  const [planAplicado, setPlanAplicado] = useState(false);
+  const [descartadas, setDescartadas] = useState<Set<string>>(new Set());
 
   // Reloj de la simulación: 1 minuto clínico cada 600 ms.
   useEffect(() => {
@@ -48,35 +83,14 @@ export default function Tablero() {
     return () => clearInterval(id);
   }, [corriendo]);
 
-  const turnos: Turno[] = useMemo(() => {
-    return red.planes
-      .filter((p) => p.sedeId === sedeId)
-      .map((p) => {
-        const aj = ajustes[p.id];
-        if (!aj) return proyectar(p, ahora);
-
-        if (aj.ausente) {
-          return proyectar(
-            { ...p, desenlace: 'ausente', marcadoAusenteA: p.agendadoA },
-            ahora,
-          );
-        }
-        if (aj.inicioA !== undefined) {
-          return proyectar(
-            {
-              ...p,
-              desenlace: 'atendido',
-              checkInA: p.checkInA ?? p.agendadoA,
-              inicioA: aj.inicioA,
-              finA: aj.inicioA + p.duracionAgendada,
-            },
-            ahora,
-          );
-        }
-        return proyectar(p, ahora);
-      })
-      .sort((a, b) => a.agendadoA - b.agendadoA);
-  }, [red.planes, sedeId, ahora, ajustes]);
+  const turnos: Turno[] = useMemo(
+    () =>
+      red.planes
+        .filter((p) => p.sedeId === sedeId)
+        .map((p) => aplicarAjuste(p, ajustes[p.id], ahora))
+        .sort((a, b) => a.agendadoA - b.agendadoA),
+    [red.planes, sedeId, ahora, ajustes],
+  );
 
   const consultorios = useMemo(
     () => red.consultorios.filter((c) => c.sedeId === sedeId),
@@ -85,20 +99,36 @@ export default function Tablero() {
 
   const metricas = useMemo(() => calcularMetricas(turnos, ahora), [turnos, ahora]);
   const estados = useMemo(() => estadoPorConsultorio(turnos, ahora), [turnos, ahora]);
+  const plan = useMemo(
+    () => planificar(turnos, consultorios, ahora),
+    [turnos, consultorios, ahora],
+  );
 
-  const [descartadas, setDescartadas] = useState<Set<string>>(new Set());
   const alertas = useMemo(
     () => generarAlertas(turnos, estados, ahora).filter((a) => !descartadas.has(a.id)),
     [turnos, estados, ahora, descartadas],
   );
 
+  // Vista de red: se proyectan las ocho sedes con los mismos ajustes.
+  const filasRed = useMemo(() => {
+    if (vista !== 'red') return [];
+    const porSede = new Map<string, Turno[]>();
+    for (const s of red.sedes) {
+      porSede.set(
+        s.id,
+        red.planes
+          .filter((p) => p.sedeId === s.id)
+          .map((p) => aplicarAjuste(p, ajustes[p.id], ahora)),
+      );
+    }
+    return construirFilas(red.sedes, porSede, ahora);
+  }, [vista, red.sedes, red.planes, ajustes, ahora]);
+
   /**
    * Toda intervención pasa por la máquina de estados antes de aplicarse.
-   *
-   * No es ceremonia: el tablero se refresca cada 600 ms y las alertas se
-   * recalculan con él. Entre que el operador lee una alerta y hace clic, el
-   * turno pudo haber cambiado de estado solo. Sin esta guarda, un clic tardío
-   * "revive" un turno ya cerrado y el carril queda mostrando algo que no pasó.
+   * El tablero se refresca cada 600 ms: entre que el operador lee una alerta
+   * y hace clic, el turno pudo haber cambiado solo. Sin esta guarda, un clic
+   * tardío "revive" un turno ya cerrado.
    */
   const ejecutar = useCallback(
     (a: Alerta) => {
@@ -109,18 +139,52 @@ export default function Tablero() {
         setAjustes((prev) => ({ ...prev, [turno.id]: { inicioA: ahora } }));
         return;
       }
-
       if (turno && a.tipo === 'riesgo_ausencia') {
         if (!puedeTransicionar(turno.estado, 'ausente')) return;
         setAjustes((prev) => ({ ...prev, [turno.id]: { ausente: true } }));
         return;
       }
-
-      // Alertas sin turno asociado (deriva de consultorio): se acusan recibo.
       setDescartadas((prev) => new Set(prev).add(a.id));
     },
     [ahora, turnos],
   );
+
+  /* Qué turnos movió el plan, para poder deshacer SOLO eso.
+   * Las intervenciones manuales del operador (llamar, marcar ausente) no son
+   * parte del plan y no se pierden al deshacerlo. */
+  const [movidosPorPlan, setMovidosPorPlan] = useState<string[]>([]);
+
+  const aplicarPlan = useCallback(() => {
+    const aplicables = plan.reasignaciones.filter((r) => {
+      const t = turnos.find((x) => x.id === r.turnoId);
+      // Un paciente que recepción ya marcó ausente no vuelve a la cola.
+      return t !== undefined && t.estado === 'en_espera';
+    });
+
+    setAjustes((prev) => {
+      const siguiente = { ...prev };
+      for (const r of aplicables) {
+        siguiente[r.turnoId] = {
+          ...prev[r.turnoId],
+          consultorioId: r.haciaConsultorio,
+          inicioA: r.inicioConPlan,
+        };
+      }
+      return siguiente;
+    });
+    setMovidosPorPlan(aplicables.map((r) => r.turnoId));
+    setPlanAplicado(true);
+  }, [plan, turnos]);
+
+  const deshacerPlan = useCallback(() => {
+    setAjustes((prev) => {
+      const siguiente = { ...prev };
+      for (const id of movidosPorPlan) delete siguiente[id];
+      return siguiente;
+    });
+    setMovidosPorPlan([]);
+    setPlanAplicado(false);
+  }, [movidosPorPlan]);
 
   const sede = red.sedes.find((s) => s.id === sedeId)!;
 
@@ -128,31 +192,49 @@ export default function Tablero() {
     <div className="min-h-dvh">
       <header className="border-b border-rule bg-surface">
         <div className="mx-auto flex max-w-[100rem] flex-wrap items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-baseline gap-3">
+          <div className="flex items-center gap-4">
             <span className="font-display text-xl font-bold tracking-tight text-ink">
               Cadencia
             </span>
-            <span className="hidden text-[0.8125rem] text-ink-faint sm:inline">
-              Red ambulatoria · {red.sedes.length} sedes
-            </span>
+            <nav className="flex rounded-xs border border-rule" aria-label="Vista">
+              {(
+                [
+                  ['red', `Red · ${red.sedes.length} sedes`],
+                  ['sede', sede.nombre],
+                ] as const
+              ).map(([v, rotulo]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setVista(v)}
+                  aria-current={vista === v ? 'page' : undefined}
+                  className={`px-2.5 py-1.5 text-[0.8125rem] font-semibold transition ${
+                    vista === v
+                      ? 'bg-ink text-white'
+                      : 'text-ink-soft hover:text-ink'
+                  }`}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </nav>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <label className="sr-only" htmlFor="sede">
-              Sede
-            </label>
-            <select
-              id="sede"
-              value={sedeId}
-              onChange={(e) => setSedeId(e.target.value)}
-              className="rounded-xs border border-rule bg-surface px-2.5 py-1.5 text-[0.875rem] font-semibold text-ink"
-            >
-              {red.sedes.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre} — {s.localidad}
-                </option>
-              ))}
-            </select>
+            {vista === 'sede' && (
+              <select
+                value={sedeId}
+                onChange={(e) => setSedeId(e.target.value)}
+                aria-label="Sede"
+                className="rounded-xs border border-rule bg-surface px-2.5 py-1.5 text-[0.875rem] font-semibold text-ink"
+              >
+                {red.sedes.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre} — {s.localidad}
+                  </option>
+                ))}
+              </select>
+            )}
 
             <div className="flex items-center gap-2 rounded-xs border border-rule px-2.5 py-1.5">
               <span className="tabular text-[0.875rem] font-semibold text-ink">
@@ -185,17 +267,36 @@ export default function Tablero() {
       </header>
 
       <main className="mx-auto max-w-[100rem] space-y-4 px-4 py-4">
-        <div>
-          <h1 className="sr-only">
-            Agenda del día — {sede.nombre}, {formatoHora(ahora)}
-          </h1>
-          <TiraMetricas m={metricas} />
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[1fr_22rem]">
-          <CarrilDeriva consultorios={consultorios} turnos={turnos} ahora={ahora} />
-          <PanelAlertas alertas={alertas} onEjecutar={ejecutar} />
-        </div>
+        {vista === 'red' ? (
+          <>
+            <h1 className="sr-only">Red completa — {formatoHora(ahora)}</h1>
+            <VistaRed
+              filas={filasRed}
+              ahora={ahora}
+              onAbrirSede={(id) => {
+                setSedeId(id);
+                setVista('sede');
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <h1 className="sr-only">
+              Agenda del día — {sede.nombre}, {formatoHora(ahora)}
+            </h1>
+            <TiraMetricas m={metricas} />
+            <PanelOptimizacion
+              plan={plan}
+              aplicado={planAplicado}
+              onAplicar={aplicarPlan}
+              onDeshacer={deshacerPlan}
+            />
+            <div className="grid gap-4 xl:grid-cols-[1fr_22rem]">
+              <CarrilDeriva consultorios={consultorios} turnos={turnos} ahora={ahora} />
+              <PanelAlertas alertas={alertas} onEjecutar={ejecutar} />
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
