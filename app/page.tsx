@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CarrilDeriva } from '@/components/CarrilDeriva';
+import { GraficoEscenarios, TablaResumen } from '@/components/GraficoEscenarios';
 import { PanelAlertas } from '@/components/PanelAlertas';
 import { PanelOptimizacion } from '@/components/PanelOptimizacion';
 import { TiraMetricas } from '@/components/TiraMetricas';
@@ -14,6 +15,7 @@ import {
   type Minutos,
   type Turno,
 } from '@/lib/domain';
+import { compararEscenarios } from '@/lib/escenarios';
 import { calcularMetricas, estadoPorConsultorio } from '@/lib/metricas';
 import { planificar } from '@/lib/optimizador';
 import { generarRed, proyectar, type TurnoPlan } from '@/lib/seed';
@@ -36,7 +38,7 @@ interface Ajuste {
   consultorioId?: string;
 }
 
-type Vista = 'red' | 'sede';
+type Vista = 'red' | 'sede' | 'escenarios';
 
 function aplicarAjuste(p: TurnoPlan, aj: Ajuste | undefined, ahora: Minutos): Turno {
   if (!aj) return proyectar(p, ahora);
@@ -107,6 +109,14 @@ export default function Tablero() {
   const alertas = useMemo(
     () => generarAlertas(turnos, estados, ahora).filter((a) => !descartadas.has(a.id)),
     [turnos, estados, ahora, descartadas],
+  );
+
+  /* Los escenarios reejecutan la jornada completa cuatro veces (~60 ms).
+   * Se calculan al abrir la pestaña y no dependen del reloj ni de las
+   * intervenciones: son la proyección del día entero, no el estado de ahora. */
+  const resumenes = useMemo(
+    () => (vista === 'escenarios' ? compararEscenarios() : []),
+    [vista],
   );
 
   // Vista de red: se proyectan las ocho sedes con los mismos ajustes.
@@ -201,6 +211,7 @@ export default function Tablero() {
                 [
                   ['red', `Red · ${red.sedes.length} sedes`],
                   ['sede', sede.nombre],
+                  ['escenarios', 'Escenarios'],
                 ] as const
               ).map(([v, rotulo]) => (
                 <button
@@ -267,7 +278,21 @@ export default function Tablero() {
       </header>
 
       <main className="mx-auto max-w-[100rem] space-y-4 px-4 py-4">
-        {vista === 'red' ? (
+        {vista === 'escenarios' ? (
+          <>
+            <h1 className="sr-only">Comparación de escenarios</h1>
+            {resumenes.length === 0 ? (
+              <p className="rounded-sm border border-rule bg-surface px-4 py-8 text-[0.875rem] text-ink-soft">
+                Simulando la jornada bajo cada política…
+              </p>
+            ) : (
+              <>
+                <TablaResumen resumenes={resumenes} />
+                <GraficoEscenarios resumenes={resumenes} />
+              </>
+            )}
+          </>
+        ) : vista === 'red' ? (
           <>
             <h1 className="sr-only">Red completa — {formatoHora(ahora)}</h1>
             <VistaRed
