@@ -117,6 +117,17 @@ export interface Turno {
 
   /** Turno insertado fuera de la grilla regular (demanda espontánea). */
   esSobreturno: boolean;
+
+  /**
+   * Consultorio del que se movió a este paciente, si fue reasignado.
+   *
+   * Se modela explícitamente en vez de simplemente pisar `consultorioId`
+   * porque un cambio de sala es un hecho que hay que COMUNICAR: el paciente
+   * está sentado mirando una puerta y ahora tiene que mirar otra. Sin esta
+   * marca el sistema no tiene forma de saber que debe avisarle, y el cambio
+   * ocurre en silencio — que es indistinguible de un error para quien lo vive.
+   */
+  reasignadoDesde?: string;
 }
 
 /* ────────────────────────────────────────────────────────────────────────────

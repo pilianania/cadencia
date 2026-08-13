@@ -53,12 +53,15 @@ export function PanelOptimizacion({ plan, aplicado, onAplicar, onDeshacer }: Pro
           <p className="eyebrow">Motor de reasignación</p>
           {aplicado ? (
             <p className="text-[0.9375rem] font-semibold text-ink">
-              Plan aplicado · {pacientesBeneficiados} pacientes reubicados,{' '}
+              Plan aplicado · {pacientesBeneficiados}{' '}
+              {pacientesBeneficiados === 1 ? 'paciente reubicado' : 'pacientes reubicados'},{' '}
               {Math.round(minutosRecuperados)} minutos de espera evitados
             </p>
           ) : (
             <p className="text-[0.9375rem] font-semibold text-ink">
-              {pacientesBeneficiados} pacientes pueden pasar antes ·{' '}
+              {pacientesBeneficiados}{' '}
+              {pacientesBeneficiados === 1 ? 'paciente puede' : 'pacientes pueden'} pasar
+              antes ·{' '}
               <span className="text-accent">
                 {Math.round(minutosRecuperados)} minutos de espera evitables
               </span>

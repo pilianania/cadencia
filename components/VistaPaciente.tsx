@@ -190,6 +190,22 @@ function Telefono({
 
               <Ventana estimacion={estimacion} agendado={turno.agendadoA} />
 
+              {/* Un cambio de sala se AVISA y se explica el porqué.
+                  El paciente está sentado mirando una puerta; cambiarle la
+                  puerta en silencio es indistinguible de un error para quien
+                  lo vive. Y como el motivo es que pasa antes, decirlo
+                  convierte una confusión en una buena noticia. */}
+              {turno.reasignadoDesde && (
+                <p className="mt-3 rounded-sm border border-sev-normal/30 bg-sev-normal-bg px-2.5 py-2 text-[0.75rem] leading-snug text-ink">
+                  <strong className="font-semibold">
+                    Te cambiamos de consultorio para que pases antes.
+                  </strong>{' '}
+                  Ahora te atienden en {nombreConsultorio(turno.consultorioId)},
+                  no en {nombreConsultorio(turno.reasignadoDesde)}. Tu código no
+                  cambia.
+                </p>
+              )}
+
               {/* El código va en su propia fila y destacado: es lo que el
                   paciente busca en la pantalla de la sala. Con tres columnas
                   en el ancho de un teléfono las etiquetas se encimaban. */}
@@ -382,6 +398,14 @@ function PantallaSala({
                 <span
                   className={`font-semibold ${i === 0 ? 'text-xl' : 'text-base text-white/70'}`}
                 >
+                  {/* Si se lo movió, la pantalla lo marca: el paciente
+                      memorizó otra puerta y hay que corregirle el dato en el
+                      mismo lugar donde lo leyó. */}
+                  {t.reasignadoDesde && (
+                    <span className="mr-2 rounded-xs bg-white/20 px-1.5 py-0.5 text-[0.6875rem] uppercase tracking-wide">
+                      cambio
+                    </span>
+                  )}
                   {nombreConsultorio(t.consultorioId)}
                 </span>
               </li>

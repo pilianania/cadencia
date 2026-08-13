@@ -57,23 +57,31 @@ function aplicarAjuste(p: TurnoPlan, aj: Ajuste | undefined, ahora: Minutos): Tu
     return proyectar({ ...p, desenlace: 'cancelado', canceladoA: ahora }, ahora);
   }
 
-  const base: TurnoPlan = aj.consultorioId
-    ? { ...p, consultorioId: aj.consultorioId }
+  const reasignado = aj.consultorioId !== undefined && aj.consultorioId !== p.consultorioId;
+  const base: TurnoPlan = reasignado
+    ? { ...p, consultorioId: aj.consultorioId! }
     : p;
 
+  // El consultorio de origen viaja con el turno: es lo que permite avisarle
+  // al paciente que se movió, en lugar de cambiarle la puerta sin decir nada.
+  const marca = reasignado ? { reasignadoDesde: p.consultorioId } : {};
+
   if (aj.inicioA !== undefined) {
-    return proyectar(
-      {
-        ...base,
-        desenlace: 'atendido',
-        checkInA: base.checkInA ?? base.agendadoA,
-        inicioA: aj.inicioA,
-        finA: aj.inicioA + base.duracionAgendada,
-      },
-      ahora,
-    );
+    return {
+      ...proyectar(
+        {
+          ...base,
+          desenlace: 'atendido',
+          checkInA: base.checkInA ?? base.agendadoA,
+          inicioA: aj.inicioA,
+          finA: aj.inicioA + base.duracionAgendada,
+        },
+        ahora,
+      ),
+      ...marca,
+    };
   }
-  return proyectar(base, ahora);
+  return { ...proyectar(base, ahora), ...marca };
 }
 
 export default function Tablero() {

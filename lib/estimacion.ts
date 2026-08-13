@@ -16,6 +16,7 @@
  */
 
 import {
+  JORNADA,
   agruparPorConsultorio,
   duracionRealMinutos,
   type Minutos,
@@ -101,27 +102,74 @@ export function estimar(
  * El nombre no aporta nada operativo que el código no resuelva.
  *
  * UNICIDAD POR CONSTRUCCIÓN, no por probabilidad.
- * La versión anterior derivaba el código de un hash del identificador. Con
- * ~160 turnos por sede eso colisionaba casi con certeza, y dos pacientes
- * llamados con el mismo código es una falla operativa real, no un detalle
- * estadístico. Acá el código se asigna por posición: letra por consultorio,
- * número por orden de turno dentro de ese consultorio. Es único, es estable
- * durante el día, es legible a cinco metros y además le dice al paciente
- * cuántos tiene por delante sin revelarle nada a nadie más.
+ * Una primera versión derivaba el código de un hash del identificador: con
+ * ~160 turnos por sede colisionaba casi con certeza, y dos pacientes llamados
+ * con el mismo código es una falla operativa, no un detalle estadístico.
+ *
+ * ESTABILIDAD ANTE LA REASIGNACIÓN — la restricción que define el diseño.
+ * Una segunda versión numeraba por consultorio. Era única, pero al mover UN
+ * paciente de sala se corría la numeración de las dos salas involucradas y el
+ * código le cambiaba a media sede (medido: mover 2 pacientes le cambió el
+ * código a 98 de 194). Un paciente al que se le dijo "sos B-007" mira la
+ * pantalla y su código ya no existe: destruye justamente la confianza que la
+ * pantalla venía a construir.
+ *
+ * Por eso el código se deriva de la hora agendada, no del consultorio: letra
+ * por franja horaria, número por orden dentro de la franja. Es único, estable
+ * ante cualquier reasignación, legible a cinco metros, y le dice al paciente
+ * de qué hora es su turno.
+ *
+ * LÍMITE CONOCIDO, dicho con todas las letras:
+ * numerar por posición es estable ante reasignaciones pero NO ante inserciones.
+ * Un sobreturno cargado a mitad de la mañana con hora anterior correría el
+ * número de todos los que vienen después en esa franja. Se mitiga poniendo los
+ * sobreturnos al final de su franja, así el paciente con turno programado
+ * nunca ve cambiar su código; entre sobreturnos el problema subsiste.
+ *
+ * En producción esto no se calcula: el código se asigna UNA VEZ al reservar
+ * el turno y se persiste con él. Acá se deriva porque el prototipo no tiene
+ * dónde guardarlo. La derivación es una limitación del prototipo, no el
+ * diseño propuesto — vale decirlo antes de que lo pregunten.
+ *
+ * Regla general detrás de todo esto: un identificador que se le comunica a
+ * una persona no puede depender de nada que el sistema tenga derecho a
+ * cambiar después.
  */
 export function asignarCodigos(turnos: readonly Turno[]): Map<string, string> {
   const codigos = new Map<string, string>();
-  const consultorios = [...new Set(turnos.map((t) => t.consultorioId))].sort();
 
-  consultorios.forEach((consultorioId, indice) => {
-    const letra = String.fromCharCode(65 + (indice % 26));
-    turnos
-      .filter((t) => t.consultorioId === consultorioId)
-      .sort((a, b) => a.agendadoA - b.agendadoA || a.id.localeCompare(b.id))
+  const porFranja = new Map<number, Turno[]>();
+  for (const t of turnos) {
+    const franja = Math.floor(t.agendadoA / 60);
+    const xs = porFranja.get(franja);
+    if (xs) xs.push(t);
+    else porFranja.set(franja, [t]);
+  }
+
+  /* La letra se ancla a la APERTURA DE LA JORNADA, no a la primera franja
+   * observada. Anclarla a lo observado hacía que un turno cargado en una hora
+   * más temprana que cualquier existente corriera la letra de TODA la sede.
+   * Con un ancla constante, las 08h son siempre A y las 09h siempre B, exista
+   * o no un turno a esa hora. */
+  const ancla = Math.floor(JORNADA.apertura / 60);
+
+  for (const franja of [...porFranja.keys()].sort((a, b) => a - b)) {
+    const letra = String.fromCharCode(65 + (((franja - ancla) % 26) + 26) % 26);
+    porFranja
+      .get(franja)!
+      // Los sobreturnos van al final de su franja: se cargan durante el día,
+      // y si se intercalaran por hora le correrían el código a pacientes que
+      // ya lo tienen anotado.
+      .sort(
+        (a, b) =>
+          Number(a.esSobreturno) - Number(b.esSobreturno) ||
+          a.agendadoA - b.agendadoA ||
+          a.id.localeCompare(b.id),
+      )
       .forEach((t, i) => {
         codigos.set(t.id, `${letra}-${String(i + 1).padStart(3, '0')}`);
       });
-  });
+  }
 
   return codigos;
 }
