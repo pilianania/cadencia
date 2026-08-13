@@ -149,7 +149,47 @@ palanca viene la mejora.
 
 ---
 
-### 1.6 Una fuente que va EN CONTRA de nuestra tesis
+### 1.6 Qué dice la evidencia sobre espera y satisfacción
+
+Miramos las dos direcciones: lo que respalda la tesis y lo que la contradice.
+
+#### A favor — y con un hallazgo que cambia el diseño del producto
+
+El estudio [*Influencia del tiempo de espera en la satisfacción de pacientes y
+acompañantes*](https://www.elsevier.es/es-revista-revista-calidad-asistencial-256-articulo-influencia-del-tiempo-espera-satisfaccion-S1134282X1500007X)
+(Revista de Calidad Asistencial, Hospital de Figueres, 285 respuestas) encuentra:
+
+| Hallazgo | Dato |
+|---|---|
+| Relación inversa espera–satisfacción | ρ = −0,242 en triaje · **ρ = −0,304 en la visita médica** · p < 0,001 |
+| **Umbral de 15 minutos** | Quienes esperaron **menos de 15 min** estuvieron significativamente más satisfechos |
+| **Informar al paciente mejora la satisfacción** | **p = 0,001** |
+| Brecha entre espera real y percibida | Triaje: **5,9 min reales → 16,7 min percibidos** (2,8×) |
+
+**Las últimas dos filas son las importantes, y validan decisiones que ya habíamos
+tomado por criterio:**
+
+1. **El umbral de 15 minutos que usa el motor de alertas no era arbitrario.** Lo
+   habíamos fijado tomando el objetivo implícito del brief; resulta ser el mismo
+   punto donde la literatura detecta el quiebre de satisfacción.
+
+2. **Informar es una palanca en sí misma, con efecto medido.** El paciente
+   sobreestima su espera casi 3 a 1. Eso significa que **decirle cuánto va a
+   esperar reduce la espera percibida sin reducir la espera real** — y es
+   incomparablemente más barato que agregar consultorios.
+
+   Es la justificación empírica de la vista de paciente: la ventana estimada, el
+   aviso de demora con disculpa, la comunicación del cambio de consultorio. No
+   son gestos de cortesía: son la intervención con mejor relación
+   costo-resultado de toda la propuesta.
+
+Como referencias adicionales, la [Revista de Calidad Asistencial y estudios en
+consulta externa latinoamericana](http://www.scielo.org.co/scielo.php?script=sci_arttext&pid=S0120-55522023000200810)
+analizan el punto de equilibrio entre duración de consulta y tiempo de espera, y
+trabajos en la región atribuyen alrededor de **23% de la insatisfacción del
+usuario directamente al tiempo de espera**.
+
+#### En contra — y por qué no aplica
 
 Un supuesto solo está bien fundado si buscamos también lo que lo contradice.
 
@@ -175,9 +215,26 @@ que este proyecto no sirve.
    igual.** La red del brief es ambulatoria y compite: el paciente con obra social
    que espera 45 minutos se cambia de prestador, y el costo de cambiar es casi cero.
 
-**Esto refuerza, no debilita, el argumento comercial:** la experiencia importa
-exactamente en la medida en que el paciente pueda irse. En un hospital público no
-se mide; en una red ambulatoria privada es retención.
+3. **Midió satisfacción GLOBAL, no satisfacción con la espera.** Y son cosas
+   distintas: hay estudios que reportan **95% de satisfacción global y, en la
+   misma muestra, 26% de usuarios no satisfechos con el tiempo de espera**. La
+   pregunta global promedia todo —el trato, la resolución clínica, la limpieza— y
+   la espera queda diluida. Preguntar "¿qué nota le pone al médico?" no es
+   preguntar "¿cuánto le molestó esperar?".
+
+**Los dos estudios no se contradicen: miden cosas distintas.** El de Figueres
+pregunta específicamente por la espera y encuentra correlación significativa. El
+de El Cruce pregunta por el profesional, en una población sin alternativa, y
+encuentra un techo.
+
+**Y refuerza el argumento comercial:** la experiencia importa exactamente en la
+medida en que el paciente pueda irse. En un hospital público no se mide; en una
+red ambulatoria privada es retención.
+
+**Consecuencia para el proyecto:** la métrica de satisfacción que hay que
+instrumentar en fase 0 **no es un NPS global**, que va a dar bien y no va a
+mover nunca. Es una pregunta específica sobre la espera, comparable contra la
+línea de base.
 
 ---
 
