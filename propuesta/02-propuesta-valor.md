@@ -18,7 +18,12 @@ consultorio administra su propia cola.
 liberarse uno, el sistema identifica al paciente de mayor espera acumulada en toda
 la sede y propone el movimiento.
 
-**Efecto medido:** espera media de 32,1 a 23,4 minutos. Percentil 90 de 78 a 55.
+**Efecto medido:** espera media de la jornada de 32,1 a 23,4 minutos. Percentil 90
+de 78 a 55. En el pico de las 17 horas, de 40 a 30 minutos.
+
+*La media de la jornada es inferior a los 45 minutos reportados porque incorpora
+las primeras horas, en las que la agenda opera en horario. El detalle de la curva
+figura en el mecanismo siguiente.*
 
 **Sin modificar la agenda ni los acuerdos con los profesionales.**
 

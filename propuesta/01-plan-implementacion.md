@@ -6,14 +6,24 @@ El análisis descompone el problema en tres palancas y mide el efecto aislado de
 cada una. Esa descomposición es analítica: **no constituye una secuencia de
 despliegue.**
 
-| Escenario simulado | Espera media | Dispersión |
+| Escenario simulado | Media de la jornada | A las 17 h |
 |---|---|---|
-| Situación actual | 32,1 min | ±4,4 |
-| + Pool de reasignación | 23,4 min | ±4,4 |
-| + Confirmación activa, sin rediseñar la grilla | **30,7 min** | ±5,5 |
-| + Rediseño de grilla | 20,2 min | ±1,4 |
+| Situación actual | 32,1 min ±4,4 | **40 min** |
+| + Pool de reasignación | 23,4 min ±4,4 | 30 min |
+| + Confirmación activa, sin rediseñar la grilla | **30,7 min** ±5,5 | 38 min |
+| + Rediseño de grilla | 20,2 min ±1,4 | 27 min |
 
 *Promedio de 8 réplicas de la jornada completa.*
+
+> **Por qué la media de la jornada no es 45 minutos.** La cifra reportada
+> corresponde al pico de la tarde, que es cuando se generan los reclamos, no al
+> promedio del día. El modelo arroja 40 minutos a las 17 horas y 60 a las 18,
+> mientras que a las 9 de la mañana la agenda opera en horario. La media de la
+> jornada es necesariamente inferior porque incorpora las primeras horas.
+>
+> Se utiliza la media para comparar escenarios porque es el indicador más
+> estable; la columna de las 17 horas permite el contraste con la experiencia
+> reportada. Ambas conducen a la misma conclusión sobre el orden de las fases.
 
 Implementar la confirmación activa y detenerse allí **incrementa la espera**: los
 pacientes recuperados ingresan en una agenda construida bajo el supuesto de que
