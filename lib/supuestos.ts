@@ -108,10 +108,10 @@ export const SOBRECARGA_CONSULTA: Supuesto = {
   rango: [1.1, 1.3],
   unidad: 'multiplicador',
   fuente:
-    'CONSERVADOR. Una encuesta de la Sociedad Argentina de Cardiología reporta que al ' +
+    'CONSERVADOR. CONVERGENCIA DE FUENTES, ninguna concluyente sola. Gremial (Soc. Argentina de Cardiología): al ' +
     '70% de los profesionales se les exige ofrecer turnos de 10-15 minutos, mientras ' +
     'que consideran que la consulta requiere 20-30. Esa brecha declarada implica un ' +
-    'factor de 1,5 a 2×; modelamos 1,1-1,3×.',
+    'factor de 1,5 a 2×. Sectorial (INFOMED): media ambulatoria ~15 min, rara vez supera 20. Gremial federal (COMRA): congestión sistémica, turnos a 3 meses. Académica: estudios de tiempo de consulta ambulatoria en SciELO y en Rev. Argentina de Salud Pública (Hosp. El Cruce, 26 profesionales, 11 subespecialidades). Modelamos 1,1-1,3×, por debajo de todas. La fuente gremial es de UNA especialidad y tiene incentivo a declarar que necesita más tiempo: no se usa sola ni se toma su magnitud.',
   confianza: 'alta',
   sensibilidad:
     'Es el motor de la cascada: si la consulta dura más que el slot, cada turno empuja ' +

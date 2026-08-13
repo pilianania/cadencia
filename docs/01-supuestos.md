@@ -88,17 +88,31 @@ dirección de la conclusión, no la magnitud del porcentaje.
 | | |
 |---|---|
 | **Asumido** | 1,1 – 1,3× la duración agendada |
-| **Fuente** | Una encuesta de la **Sociedad Argentina de Cardiología** reporta que al **70% de los profesionales se les exige ofrecer turnos de 10 a 15 minutos**, mientras que consideran que la consulta requiere **20 a 30**. Esa brecha declarada implica un factor de **1,5 a 2×** |
-| **Confianza** | **Alta** |
+| **Confianza** | **Media-alta** — convergencia de fuentes independientes, ninguna concluyente por sí sola |
 
-**Este es el motor de toda la cascada.** Si la consulta durara exactamente lo
-agendado no habría deriva, y el problema que describe el brief no existiría. La
-demora no nace de la impuntualidad ni de las ausencias: nace de que **cada consulta
-llega tarde a la siguiente**.
+**Base — cuatro fuentes de distinto tipo, porque ninguna alcanza sola:**
 
-**Modelamos 1,1–1,3× cuando la evidencia sugiere 1,5–2×.** Elegimos deliberadamente
-el extremo bajo: subestimamos el problema y, por lo tanto, también el beneficio. El
-caso real es probablemente mejor que el que presentamos.
+| Tipo | Fuente | Qué aporta |
+|---|---|---|
+| Gremial, especialidad | [Sociedad Argentina de Cardiología](https://www.lanacion.com.ar/sociedad/crisis-sanitaria-mas-de-30-asociaciones-medicas-avalan-la-aplicacion-de-un-honorario-minimo-federal-nid21092023/) | Al **70%** se le exige dar turnos de **10–15 min**; consideran necesarios **20–30**. Brecha declarada: **1,5–2×** |
+| Gremial, federal | [COMRA](https://misionesonline.net/2026/04/20/pami-comra-afiliados-crisis/) (Confederación Médica de la República Argentina) | Turnos a tres meses o más y cartillas que pierden profesionales: **la congestión es sistémica, no de una institución** |
+| Sectorial | [INFOMED](https://infomed.com.ar/consulta-medica-cuanto-dura-en-promedio/) | Media ambulatoria en torno a **15 min**; rara vez supera los **20** aun en escenarios favorables |
+| Académica | [Estimación del tiempo de consulta ambulatoria en clínica médica](https://www.scielo.cl/scielo.php?script=sci_arttext&pid=S0034-98872013000300012) (SciELO) · [Estudio en consulta externa, 26 profesionales de 11 subespecialidades, Hospital El Cruce](https://rasp.msal.gov.ar/rasp/articulos/vol13/AO_GarciaMunitis44.pdf) (Revista Argentina de Salud Pública, Ministerio de Salud, 2021) | Miden duración de consulta y tiempo de espera como variables reales en entorno ambulatorio argentino |
+
+**Honestidad sobre las fuentes:** la de cardiología es de **una** especialidad y es
+gremial, o sea que tiene incentivo a declarar que necesita más tiempo del que le
+dan. Por eso no la usamos sola ni tomamos su magnitud. Lo que sostiene el supuesto
+es la **convergencia**: cuatro fuentes de naturaleza distinta —gremial, sectorial,
+académica— apuntan en la misma dirección, y modelamos por debajo de todas ellas.
+
+**Por qué importa:** este es el motor de toda la cascada. Si la consulta durara
+exactamente lo agendado no habría deriva, y el problema que describe el brief no
+existiría. La demora no nace de la impuntualidad ni de las ausencias: nace de que
+**cada consulta llega tarde a la siguiente**.
+
+**Modelamos 1,1–1,3× cuando la evidencia gremial sugiere 1,5–2×.** Elegimos
+deliberadamente el extremo bajo: subestimamos el problema y, por lo tanto, también
+el beneficio. El caso real es probablemente mejor que el que presentamos.
 
 ### 1.4 Jornada
 
@@ -132,6 +146,38 @@ movimiento posible. Hubo que corregir el modelo.
 Si la red está fragmentada, el valor se corre íntegramente a las fases 2 y 3, que
 **no dependen de la estructura de la oferta**. El plan no se cae; cambia de qué
 palanca viene la mejora.
+
+---
+
+### 1.6 Una fuente que va EN CONTRA de nuestra tesis
+
+Un supuesto solo está bien fundado si buscamos también lo que lo contradice.
+
+El estudio del [Hospital El Cruce publicado en la Revista Argentina de Salud
+Pública](https://rasp.msal.gov.ar/rasp/articulos/vol13/AO_GarciaMunitis44.pdf)
+(423 encuestas, consulta externa, 2021) midió el **tiempo de espera en minutos**
+como variable predictora de satisfacción y encontró que **ninguna de las variables
+analizadas —incluida la espera— se asoció significativamente con peor evaluación**.
+La mediana de satisfacción fue 10 sobre 10; solo 3 de 423 personas puntuaron por
+debajo de 7.
+
+Tomado literalmente, eso diría que reducir la espera no mejora la satisfacción y
+que este proyecto no sirve.
+
+**Por qué no aplica a este caso, y hay que poder decirlo:**
+
+1. **Efecto techo.** Con mediana 10 y menos del 1% de respuestas negativas no hay
+   varianza que explicar. El estudio no demuestra que la espera no importe:
+   demuestra que en esa muestra no hubo insatisfacción que atribuirle a nada.
+2. **Población cautiva.** Es un hospital público de alta complejidad que atiende
+   a más de dos millones de habitantes del conurbano sur, articulando con más de
+   200 centros de atención primaria. **Un paciente sin alternativa puntúa alto
+   igual.** La red del brief es ambulatoria y compite: el paciente con obra social
+   que espera 45 minutos se cambia de prestador, y el costo de cambiar es casi cero.
+
+**Esto refuerza, no debilita, el argumento comercial:** la experiencia importa
+exactamente en la medida en que el paciente pueda irse. En un hospital público no
+se mide; en una red ambulatoria privada es retención.
 
 ---
 
