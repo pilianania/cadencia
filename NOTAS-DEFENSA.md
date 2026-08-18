@@ -18,8 +18,10 @@ diferencia entre que suene a solidez o a excusa es quién lo menciona primero.
 
 > Sus dos números no son dos problemas: son el mismo. Con 30% de ausencias, la
 > demora se disolvería en los huecos. Que convivan solo se explica porque
-> sobreagendan para cubrirse. Bajar ausencias es lo que habilita dejar de
-> sobreagendar, y eso es lo que baja la espera.
+> sobreagendan para cubrirse. La reasignación baja la espera de 45 a 36 sin
+> tocar nada más; bajar las ausencias es lo que permite ajustar la agenda sin
+> perder volumen y proteger esa ganancia. Bajar de ahí ya cuesta turnos, y eso
+> lo decide la institución con datos propios.
 
 Si solo podés decir una cosa, es esa. Todo el plan se deriva de ahí.
 
@@ -29,8 +31,8 @@ Si solo podés decir una cosa, es esa. Todo el plan se deriva de ahí.
 
 ### "¿Por qué no implementan los recordatorios primero, que es lo fácil?"
 
-Está medido: **empeora**. De 23,7 a 27,4 minutos. Los pacientes recuperados
-entran en una grilla armada asumiendo que no venían.
+Está medido: **empeora**. De 36 a 51 minutos, peor que hoy. Los pacientes
+recuperados entran en una agenda armada asumiendo que no venían.
 
 Es el argumento más fuerte contra los otros dos proveedores: si alguno ofrece
 "recordatorios por WhatsApp" como quick win, va a empeorar el número que la
@@ -49,20 +51,21 @@ Es un balanceador greedy, no un solver de programación entera. Tres razones:
 Un solver que devuelve una asignación óptima sin explicación no se usa en un
 mostrador: se desconfía de él y se vuelve a la planilla.
 
-### "¿Por qué no lo automatizan?"
+### "¿Y si le ofrecen un cambio a alguien que tiene que ver a su médico?"
 
-Mover a un paciente puede ser incorrecto por cosas que el sistema no ve:
-continuidad con su médico, un estudio pendiente en otra sala, un acompañante.
-Recepción sí las ve.
-
-El sistema propone, la persona decide. Un sistema que reordena la sala sin avisar
-se apaga en una semana.
+Las ofertas salen solas, sin que recepción las apruebe: el consultorio libre no
+puede esperar a que alguien mire el tablero. Dos guardas: el que decide es el
+paciente (si le importa seguir con su médico, rechaza), y lo que el sistema no
+puede saber (tratamiento en curso, estudio a revisar con ese profesional) se
+marca una vez en el turno como "no reasignable" y no entra al motor. Un sistema
+que mueve gente sin preguntar se apaga en una semana; uno que ofrece, no.
 
 ### "El paciente se marea con tantos cambios"
 
 Tres restricciones, ninguna técnica:
 
-1. Solo se mueve si el ahorro supera 8 minutos
+1. Solo se mueve si el ahorro supera 12 minutos (mediana del error de la
+   estimación; medido con `npm run umbral`)
 2. Nunca hay intercambios cruzados entre dos consultorios
 3. Cada movimiento se comunica con su motivo, y **el código de turno no cambia
    nunca**
@@ -83,15 +86,45 @@ Y del otro lado está Figueres: ρ = −0,304, p < 0,001, con umbral en 15 minut
 ### "¿De dónde sacaste el volumen / los consultorios?"
 
 Los asumí, y está declarado. Lo importante: **el porcentaje de mejora no depende
-del tamaño de la red sino de su utilización.** Medido — 8 sedes dan −37%, un
-subconjunto más congestionado da −51%. Lo que se sostiene ante un error de
-volumen es el orden de las fases.
+del tamaño de la red sino de su utilización.** Medido: la red completa da −20%
+con la reasignación (64 réplicas), y un subconjunto más congestionado mejora más. Lo que se sostiene ante un error
+de volumen es el orden de las fases.
 
 ### "Nuestra consulta factura la mitad de lo que asumiste"
 
 El modelo no está en pesos. Trabaja en consultas y horas-consultorio, y se
 monetiza con un solo parámetro que aportan ellos. Cambiás el número y recalculás
 en la reunión.
+
+### "¿Por qué la licencia cuesta diez veces una agenda con recordatorios?"
+
+Porque no es una agenda con recordatorios. Turnito y SimpleTurno cobran USD 9 a
+28 por cuenta y mes; para la red, USD 100 a 1.200 mensuales. Nosotros USD 4.000.
+En precio se pierde, y hay que decirlo antes de que lo digan. Se gana en oferta
+técnica: la agenda con recordatorios entrega la fase 2 sin ajuste de la agenda, y
+eso empeora la espera de 36 a 51 minutos. La comparación es contra el beneficio
+(USD 106.000 anuales si los turnos liberados se vuelven a dar), no contra ese precio.
+
+### "¿Cuánto gana Intuit con esto?"
+
+Primer año negativo (USD 57.000), se paga durante el segundo, y a régimen
+deja ~50% de margen. Lo que hay que construir no es el software: es capacidad de
+implantación (de 1 a 4 personas en tres años) y de vender por licitación. Si el
+año 2 cierra dos redes en vez de cinco, el equilibrio pasa al tercer año.
+
+### "¿Y esto corre sobre Clever?"
+
+**No asumir nada sobre Clever.** El brief lo pide. La propuesta se presenta como
+módulo autónomo que se integra por HL7 y FHIR con lo que la red tenga. Los
+antecedentes del oferente quedan como dato a completar por Intuit.
+
+### "¿De dónde sale que la clínica se queda con el 30% de la consulta?"
+
+Es un supuesto, y hay que decirlo así. En consultorios privados el médico cobra
+un porcentaje de cada consulta; el reparto varía por institución y no hay dato
+público. Se tomó 70/30, que es un arreglo habitual y del lado bajo para la
+clínica. Si la red retiene menos, el retorno baja en proporción: es el segundo
+dato que se le pide.
 
 ### "¿Y los médicos qué dicen?"
 
@@ -109,8 +142,11 @@ La conversación sobre desempeño individual, si llega, es de ellos y es posteri
    Si la red está fragmentada, la fase 1 vale cero. Por eso la fase 0 la mide
    antes de comprometer resultado.
 
-2. **Lista de espera** — no sabemos si existe. Decide si la fase 3 cuesta 56
-   consultas/día o es gratis. Es la pregunta más rentable de la reunión.
+2. **Demanda para los turnos que se liberan**: no sabemos si la agenda se llena
+   con anticipación. Decide si el beneficio directo son 40 consultas/día más
+   (USD 106.000 anuales) o cero. No hace falta lista de espera formal: alcanza
+   con agendar de antemano lo que se sabe que se libera con aviso (sobreagenda
+   chica y medida, no la de hoy). Es la pregunta más rentable de la reunión.
 
 3. **Causas de ausencia prestadas** — la distribución (olvido 44%) es del
    Hospital Italiano, población prepaga urbana. La red del brief incluye La Plata
@@ -120,7 +156,7 @@ La conversación sobre desempeño individual, si llega, es de ellos y es posteri
 4. **El código de turno del prototipo se deriva, no se persiste.** En producción
    se asigna una vez al reservar. Es limitación del prototipo, no del diseño.
 
-5. **El simulador modela pooling ideal (23,7′); el motor de la UI es la versión
+5. **El simulador modela pooling ideal (35,7′); el motor de la UI es la versión
    restringida y legible.** El simulador muestra el techo, el motor lo
    practicable. Si los números no coinciden exactamente, esa es la razón.
 
@@ -135,15 +171,15 @@ La conversación sobre desempeño individual, si llega, es de ellos y es posteri
 | Evento de calendario sin especialidad | Un calendario se comparte con la pareja y con el trabajo. "Oncología — Dr. Pérez" filtra la condición hacia gente que el paciente nunca eligió informar |
 | Hora flotante en el .ics | Convertir a UTC obliga a fijar un huso, y la jurisdicción es un supuesto abierto |
 | El plan no hace intercambios cruzados | Cierran en minutos pero recepción lee dos órdenes contradictorias y vuelve a la planilla. Cuesta 35% de los movimientos y compra que el sistema se use |
-| Relevamiento por mensaje, no por llamado | No escala a 1.371 turnos/día. Con muestra telefónica de no respondedores para controlar sesgo |
+| Relevamiento por mensaje, no por llamado | No escala a 1.225 turnos/día. Con muestra telefónica de no respondedores para controlar sesgo |
 | Modelo en unidades físicas, no en pesos | En contexto inflacionario un caso en pesos se vence en un trimestre |
 
 ---
 
 ## El hallazgo con el que abrir
 
-La curva de la jornada. Hoy la espera arranca en 5 minutos a las 8:00 y llega a
-60 a las 18:00, y la jornada cierra recién a las 20:00.
+La curva de la jornada. Hoy la espera arranca en 6 minutos a las 8:00 y llega a
+80 a las 18:00, y la jornada cierra recién a las 20:06.
 
 **La agenda nunca se recupera dentro del día.** Cada hora hereda la deuda de la
 anterior.
@@ -158,11 +194,15 @@ pedido de más consultorios.
 
 1. **Vista de red** — "¿a cuál de mis ocho sedes voy hoy?" Es la pantalla de la
    Directora
-2. **Carril de deriva** en la sede peor — la cascada se ve sin explicación
-3. **Aplicar plan** — el motor propone y ejecuta
-4. **Vista de paciente** — teléfono y pantalla de sala, con el punto de privacidad
-5. **Escenarios** — la lámina para el CEO, con la fase 2 corriendo por encima de
-   la fase 1
+2. **Sede**, en la peor: arriba la lista de recepción (llegó, pasar a consulta,
+   avisó, no vino) que es lo que el mostrador usa todo el día; abajo el carril
+   de deriva, donde la cascada se ve sin explicación
+3. **Ofertas del motor**: el plan sale solo a los teléfonos, el paciente acepta o rechaza y el panel muestra cuántas se aceptaron; recepción no aplica nada a mano
+4. **Vista de paciente**: teléfono y turnera de sala (código y consultorio, sin nombres), con el punto de privacidad
+5. **Por período** (conmutador "Hoy / Por período" en Red y en Sede): los
+   indicadores del año, con la variación contra la línea de base y los hitos
+   del despliegue en el gráfico; la comparación de escenarios se muestra desde
+   la propuesta
 
 Mover el reloj a las 14:00 antes de mostrar el carril: a las 9 de la mañana no se
 ve nada.

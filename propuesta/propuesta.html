@@ -1,0 +1,1601 @@
+<meta charset="utf-8">
+<title>Cadencia</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ground: #eef1f4;
+    --surface: #ffffff;
+    --surface-2: #f6f8fa;
+    --ink: #101a26;
+    --ink-soft: #4f6076;
+    --ink-faint: #8492a3;
+    --rule: #dbe2e9;
+    --rule-soft: #e8edf2;
+    --accent: #17457a;
+    --accent-soft: #e0e9f3;
+    --good: #0e6f5c;
+    --warn: #a35a1f;
+    --bad: #a3322b;
+    --good-bg: #e2efec;
+    --warn-bg: #f7ecdd;
+    --bad-bg: #f6e3e1;
+    --serif: ui-serif, Charter, Georgia, "Times New Roman", serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0e1319;
+      --surface: #161c24;
+      --surface-2: #1c242e;
+      --ink: #e8edf3;
+      --ink-soft: #a3b1c2;
+      --ink-faint: #71808f;
+      --rule: #2a3441;
+      --rule-soft: #222b36;
+      --accent: #7aa9dd;
+      --accent-soft: #1d2b3c;
+      --good: #4dbfa3;
+      --warn: #d99a55;
+      --bad: #e07a70;
+      --good-bg: #14322c;
+      --warn-bg: #33261699;
+      --bad-bg: #33201e;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0e1319;
+    --surface: #161c24;
+    --surface-2: #1c242e;
+    --ink: #e8edf3;
+    --ink-soft: #a3b1c2;
+    --ink-faint: #71808f;
+    --rule: #2a3441;
+    --rule-soft: #222b36;
+    --accent: #7aa9dd;
+    --accent-soft: #1d2b3c;
+    --good: #4dbfa3;
+    --warn: #d99a55;
+    --bad: #e07a70;
+    --good-bg: #14322c;
+    --warn-bg: #33261699;
+    --bad-bg: #33201e;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.65;
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+    -webkit-font-smoothing: antialiased;
+  }
+  .doc { max-width: 50rem; margin: 0 auto; }
+
+  /* Portada */
+  .portada {
+    padding: 4.5rem 0 2.5rem;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 3rem;
+  }
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 1.25rem;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(2.1rem, 5.5vw, 3rem);
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.75rem;
+    text-wrap: balance;
+  }
+  .subtitulo {
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    margin: 0 0 2rem;
+    max-width: 34rem;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2.5rem;
+    font-family: var(--sans);
+    font-size: 0.8125rem;
+    color: var(--ink-faint);
+  }
+  .meta b { color: var(--ink-soft); font-weight: 600; }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    margin: 3.5rem 0 0.25rem;
+    text-wrap: balance;
+  }
+  h2 + .lede { color: var(--ink-soft); margin-top: 0.35rem; }
+  h3 {
+    font-family: var(--sans);
+    font-size: 1.0625rem;
+    font-weight: 650;
+    letter-spacing: -0.005em;
+    margin: 2.5rem 0 0.5rem;
+    text-wrap: balance;
+  }
+  h4 {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 2rem 0 0.5rem;
+  }
+  p { margin: 0 0 1.1rem; }
+  strong { font-weight: 650; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  /* Numeración de secciones: el documento es una secuencia argumental */
+  .seccion { counter-increment: sec; }
+  .seccion > h2::before {
+    content: counter(sec);
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    font-weight: 650;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Tablas */
+  .tabla-wrap { overflow-x: auto; margin: 1.5rem 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--sans);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    background: var(--surface);
+  }
+  caption {
+    caption-side: bottom;
+    text-align: left;
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    padding-top: 0.6rem;
+    line-height: 1.5;
+  }
+  th {
+    text-align: left;
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  .destacada td { background: var(--accent-soft); }
+  .delta { font-weight: 650; }
+  .delta.pos { color: var(--good); }
+  .delta.neg { color: var(--bad); }
+  .nulo { color: var(--ink-faint); font-style: italic; }
+  .rotulo { font-weight: 600; }
+  .nota-fila { display: block; font-size: 0.75rem; color: var(--ink-faint); font-weight: 400; }
+
+  /* Bloques */
+  .destaque {
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    padding: 1.1rem 1.35rem;
+    margin: 1.75rem 0;
+  }
+  .destaque p:last-child { margin-bottom: 0; }
+  .alerta {
+    background: var(--warn-bg);
+    border-left: 3px solid var(--warn);
+    padding: 1.1rem 1.35rem;
+    margin: 1.75rem 0;
+  }
+  .alerta p:last-child { margin-bottom: 0; }
+  .nota {
+    font-size: 0.9375rem;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--rule);
+    padding-top: 1rem;
+    margin: 1.75rem 0;
+  }
+  .nota p:last-child { margin-bottom: 0; }
+
+  /* Cifra grande */
+  .cifras {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 2rem 0;
+  }
+  .cifra { background: var(--surface); padding: 1.1rem 1.25rem; }
+  .cifra .n {
+    font-family: var(--sans);
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    display: block;
+    line-height: 1;
+  }
+  .cifra .r {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    display: block;
+    margin-top: 0.5rem;
+    line-height: 1.4;
+  }
+
+  /* Índice */
+  /* Pestañas */
+  .pestanas { position: sticky; top: 0; z-index: 5; display: flex; gap: 0.25rem; margin: 0 0 2rem; padding: 0.5rem 0; background: var(--ground); border-bottom: 1px solid var(--rule); }
+  .pestana-btn { font-family: var(--sans); font-size: 0.9375rem; font-weight: 600; letter-spacing: 0.01em; padding: 0.55rem 1.1rem; border: 1px solid var(--rule); border-bottom: none; background: var(--surface); color: var(--ink-soft); cursor: pointer; border-radius: 4px 4px 0 0; }
+  .pestana-btn:hover { color: var(--ink); }
+  .pestana-btn.activa { color: var(--accent); border-color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+  .pestana { display: none; counter-reset: sec; }
+  .pestana.activa { display: block; }
+  .nota-indice { font-family: var(--sans); font-size: 0.875rem; margin: 0.9rem 0 0; color: var(--ink-soft); }
+
+  .indice { background: var(--surface); border: 1px solid var(--rule); padding: 1.35rem 1.5rem; margin: 2.5rem 0; }
+  .indice ol { font-family: var(--sans); font-size: 0.9375rem; margin: 0; padding-left: 1.2rem; }
+  .indice li { margin-bottom: 0.35rem; }
+  .indice li::marker { color: var(--ink-faint); }
+
+  ol.pasos { margin: 1rem 0 1.4rem; padding-left: 1.4rem; }
+  ol.pasos li { margin-bottom: 0.5rem; }
+  ol.pasos li::marker { color: var(--accent); font-weight: 650; }
+  ul.limpia { list-style: none; padding: 0; margin: 1.2rem 0; }
+  ul.limpia li {
+    padding-left: 1.1rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+  ul.limpia li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0.65em;
+    width: 5px; height: 5px;
+    background: var(--accent);
+  }
+
+  figure { margin: 2rem 0; }
+  figcaption { font-family: var(--sans); font-size: 0.75rem; color: var(--ink-faint); margin-top: 0.6rem; line-height: 1.5; }
+  svg { display: block; width: 100%; height: auto; }
+
+  hr.fin { border: none; border-top: 2px solid var(--ink); margin: 4rem 0 2rem; }
+
+  @media print {
+    .pestanas { display: none; }
+    .pestana { display: block !important; }
+    body { background: #fff; font-size: 11pt; padding: 0; }
+    .seccion { break-inside: avoid-page; }
+    h2 { break-after: avoid; }
+    table { break-inside: avoid; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="eyebrow">Intuit Salud · Propuesta para una red de clínicas ambulatorias</p>
+    <h1>Optimización de agenda ambulatoria</h1>
+    <p class="subtitulo">Prototipo funcional, propuesta técnica y caso de negocio para una red de ocho clínicas ambulatorias que busca reducir el tiempo de espera de sus pacientes.</p>
+    <div class="meta">
+      <span><b>Base</b><br>Módulo autónomo, integrable por HL7 y FHIR</span>
+      <span><b>Alcance</b><br>8 sedes, 42 consultorios</span>
+      <span><b>Plazo</b><br>17 a 23 semanas</span>
+    </div>
+  </header>
+
+  <nav class="pestanas" aria-label="Secciones del documento">
+    <button type="button" class="pestana-btn activa" data-tab="resumen" aria-selected="true">Resumen</button>
+    <button type="button" class="pestana-btn" data-tab="propuesta" aria-selected="false">Propuesta</button>
+    <button type="button" class="pestana-btn" data-tab="negocio" aria-selected="false">Negocio</button>
+    <button type="button" class="pestana-btn" data-tab="anexo" aria-selected="false">Anexo</button>
+  </nav>
+
+  <div class="pestana activa" id="tab-resumen">
+
+  <section>
+    <h2 style="margin-top:0">Resumen</h2>
+
+    <h3>Qué pasa hoy</h3>
+    <p>La red reporta 45 minutos de espera promedio, 30% de ausencias sin aviso y consultorios que quedan libres con la sala llena. Los tres números tienen la misma causa: se sobreagenda para cubrir las ausencias, la consulta dura más que el turno, y cada consultorio administra su propia cola. La demora se acumula a lo largo del día y no se recupera si nadie interviene.</p>
+
+    <h3>Qué proponemos</h3>
+    <p>Un módulo de gestión de sala en tiempo real que se integra por HL7 y FHIR con los sistemas de turnos e historia clínica que la red tenga o incorpore, y que hace tres cosas: <strong>reasigna</strong> pacientes entre consultorios de la misma especialidad cuando uno se libera, ofreciéndoselo al paciente en su teléfono; <strong>confirma</strong> la asistencia antes del turno y ajusta la agenda al ausentismo medido, para dejar de sobreagendar; e <strong>informa</strong> al paciente su espera estimada y le pregunta, al reservar, si es su primera consulta. Recepción trabaja con una lista con las acciones de cada turno; la Dirección y cada sede ven sus indicadores por día, mes y año.</p>
+
+    <h3>Qué resultado da</h3>
+    <div class="cifras">
+      <div class="cifra"><span class="n">45 a 25</span><span class="r">minutos de espera media con las cuatro fases; 36 con las dos primeras, sin resignar turnos</span></div>
+      <div class="cifra"><span class="n">106 a 60</span><span class="r">minutos para el 10% que más espera</span></div>
+      <div class="cifra"><span class="n">30% a 21%</span><span class="r">ausencias sin aviso</span></div>
+      <div class="cifra"><span class="n">USD 170.000</span><span class="r">de ganancia al año para la clínica: turnos liberados que se vuelven a dar y pacientes que retiene, menos las consultas que cuesta la fase 3</span></div>
+      <div class="cifra"><span class="n">4 meses</span><span class="r">para recuperar la inversión inicial de USD 28.300</span></div>
+    </div>
+    <p>La reasignación baja la espera de 45 a 36 sin cambiar nada más. La confirmación con la agenda ajustada la mantiene ahí y baja las ausencias un tercio con el mismo volumen; hecha sin ajustar la agenda, la sube a 51. Agendar la primera consulta con más tiempo la baja a 25: cuesta 6% de las consultas y se paga con los pacientes que dejan de irse por la espera. Todo sale de una simulación de la jornada de las ocho sedes, calibrada contra los 45 minutos informados y promediada sobre 64 réplicas.</p>
+
+    <h3>Qué cuesta y cuándo</h3>
+    <p><strong>USD 28.300</strong> de implantación y pantallas más <strong>USD 6.200 mensuales</strong> de licencia y mensajería para las ocho sedes; 2.750 horas de trabajo en 15 a 20 semanas para las tres primeras fases (medir en una sede, 3 a 4 semanas; reasignar, 4 a 6; confirmar y ajustar la agenda, 8 a 10) más 2 a 3 semanas para la primera consulta más larga, desplegando por olas. Lo que gana la clínica: USD 106.000 al año por los turnos liberados que se vuelven a dar, menos USD 129.000 por las consultas que cuesta la primera consulta más larga, más USD 193.000 por los pacientes que retiene tomando un 1,5%: USD 170.000 al año, y la implantación se recupera en 4 meses.</p>
+
+    <h3>Dónde está cada cosa</h3>
+    <p>El prototipo funcional está en <a href="./">la raíz de este mismo sitio</a> (pestañas Red, Sede y Paciente; en Red y Sede, el conmutador Hoy / Por período). Este documento tiene cuatro pestañas: Resumen (esta), Propuesta (cómo y por qué), Negocio (qué cuesta y qué rinde) y Anexo (supuestos, metodología y resultados completos, información requerida y el caso del módulo como producto). El código, el simulador y los análisis reproducibles están en el repositorio.</p>
+
+    <h3>Qué decide la institución, y qué necesitamos</h3>
+    <p>Decide, con datos propios y al cierre de cada fase, si quiere bajar más la espera a costa de más consultas (alargar todos los turnos), y con qué ritmo despliega. Necesitamos, antes de empezar: país de operación, ingreso neto por consulta, con cuánta anticipación se llena la agenda, consultorios por especialidad en cada sede, y qué sistemas usan además de las planillas.</p>
+  </section>
+
+  </div>
+
+  <div class="pestana" id="tab-propuesta">
+
+  <div class="indice">
+    <p class="eyebrow" style="margin-bottom:0.75rem">Contenido</p>
+    <ol>
+      <li>Punto de partida</li>
+      <li>Qué dice la evidencia sobre cada dato, y cómo se ataca</li>
+      <li>Prototipo funcional</li>
+      <li>Plan de implementación</li>
+      <li>Riesgos y mitigación</li>
+      <li>Compliance y protección de datos</li>
+      <li>Diferenciadores frente a la competencia</li>
+    </ol>
+    <p class="nota-indice">Los supuestos, la metodología completa y los resultados de la simulación están en la pestaña Anexo; los números de esta pestaña salen de ahí.</p>
+  </div>
+
+  <section class="seccion">
+    <h2>Punto de partida</h2>
+    <p class="lede">La reunión con la Dirección de Operaciones de la red aportó cuatro datos. Lo que sigue se apoya en ellos o en supuestos declarados.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Dato</th><th class="num">Valor</th></tr></thead>
+        <tbody>
+          <tr><td class="rotulo">Espera promedio del paciente<span class="nota-fila">Más allá de su turno asignado</span></td><td class="num">45 min</td></tr>
+          <tr><td class="rotulo">Ausencias sin aviso previo</td><td class="num">30%</td></tr>
+          <tr><td class="rotulo">Sedes de la red</td><td class="num">8</td></tr>
+          <tr><td class="rotulo">Tiempos muertos del personal médico<span class="nota-fila">Por mala distribución de turnos</span></td><td class="num">sin cuantificar</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>La agenda opera hoy sobre teléfono y planillas compartidas, sin registro que permita medir. El objetivo declarado es mejorar la experiencia del paciente, y hay otros dos proveedores en el proceso de selección.</p>
+
+    <p>Los datos provistos se contrastaron con lo publicado. El 30% de ausencias coincide con la evidencia argentina: <a href="https://bicyt.conicet.gov.ar/fichas/produccion/8748547">Giunta et al., Hospital Italiano y CONICET</a>, estiman entre 23% y 34%, y un análisis de industria sobre 500.000 turnos de clínicas argentinas reporta que uno de cada tres pacientes no concurre. El modelo se ajustó para reproducir esos 45 minutos.</p>
+  </section>
+
+  <section class="seccion">
+    <h2>Qué dice la evidencia sobre cada dato, y cómo se ataca</h2>
+    <p class="lede">Antes de construir nada, cada uno de los tres síntomas se contrastó con la literatura para entender su causa. El diseño de la solución sale de esa lectura.</p>
+
+    <h3>Los tres síntomas, leídos juntos</h3>
+<p>Si el problema fuera solo la sobreagenda, todos los consultorios estarían saturados y no habría tiempos muertos. Que haya consultorios libres y a la vez pacientes esperando 45 minutos quiere decir que la capacidad no está donde están los pacientes. La propia información inicial lo señala al atribuir los tiempos muertos a una mala distribución de turnos.</p>
+
+    <p>A eso se suman dos causas más, que la información inicial no cuantifica y que pueden darse juntas: agendar de más para cubrir las ausencias, y consultas que duran más que el turno. Cualquiera de las dos alcanza por sí sola para producir una demora como la reportada, y cada una se corrige de manera distinta.</p>
+
+    <h3>Por qué la consulta excede su turno</h3>
+    <p>Que la consulta dure más que el turno tiene causas conocidas. Saber cuáles pesan en la red permite corregir con más precisión que alargando todos los turnos por igual.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <caption>Fuentes: <a href="https://www.medwave.cl/enfoques/ensayo/7264.html">Medwave, La consulta médica, su tiempo y duración</a>; <a href="http://www.scielo.org.co/scielo.php?script=sci_arttext&pid=S0120-55522023000200810">Revista Salud Uninorte, Duración de la consulta y tiempo de espera</a>.</caption>
+        <thead><tr><th>Causa</th><th>Qué ocurre</th><th>Qué puede hacer el sistema</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Tipo de consulta</td>
+            <td>Una primera consulta o un problema nuevo requiere anamnesis completa y dura considerablemente más que un control. El turno suele ser el mismo para ambos.</td>
+            <td>Turnos diferenciados por tipo: por ejemplo 30 minutos para primera vez y 15 para control. Reduce la variabilidad sin alargar toda la agenda.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Complejidad del paciente</td>
+            <td>Edad avanzada, pluripatología y varios motivos de consulta en una misma visita.</td>
+            <td>Medir la duración real por profesional y especialidad, y ajustar el turno donde la brecha se repite.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Carga administrativa</td>
+            <td>Según el ensayo de <a href="https://www.medwave.cl/enfoques/ensayo/7264.html">Medwave</a> sobre duración de la consulta, hasta un 20% del tiempo de la consulta se dedica a resolver trámites y registro, frente a dos minutos de consejería y tratamiento. Es una cifra de la literatura, no de la red: la proporción local se mide en la fase 0.</td>
+            <td>Asistente clínico con transcripción y borrador de historia clínica, revisado y firmado por el profesional, integrado por HL7 y FHIR con la HCE. Se integra con la historia clínica y la receta electrónica que la institución utilice.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Perfil del profesional</td>
+            <td>Los profesionales de mayor edad y las médicas tienden a consultas más largas; también quienes se orientan a medicina general.</td>
+            <td>La duración real por profesional se mide en la fase 0. El turno se recomienda por profesional, no por especialidad genérica.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>El turno es uniforme y la consulta no lo es.</strong> De ahí viene el exceso. Alargar todos los turnos por igual reduce la espera pero cuesta turnos por jornada. Diferenciar el turno por tipo de consulta y por profesional, a partir de una medición inicial de la duración real, consigue buena parte del mismo efecto perdiendo menos turnos. </p>
+
+
+    <h3>Por qué faltan los pacientes</h3>
+    <p>La principal causa de ausencia sin aviso es el olvido. <a href="https://bicyt.conicet.gov.ar/fichas/produccion/8748547">Giunta et al.</a> lo relevan por autorreporte en Argentina: olvido 44%, imprevistos 15%, malestar 12%, motivos laborales 5%, transporte 5%. Es consistente con la <a href="https://bjgp.org/content/71/707/e406">revisión sistemática del British Journal of General Practice</a>, que ubica al olvido entre las tres causas principales, y con la <a href="https://www.ncbi.nlm.nih.gov/books/NBK260108/">síntesis TURNUP</a>, donde explica entre el 45% y el 82% de los ausentes según el estudio.</p>
+    <p>Si la mayoría de las ausencias son por olvido, lo que corresponde es recordar el turno y pedir confirmación. La literatura académica local mide una reducción del ausentismo del 35% con recordatorios y confirmación, y ese es el valor que se usa en este análisis. Es el valor más bajo de la literatura. Los proveedores comerciales publican cifras mayores, pero nadie las verificó.</p>
+
+    <h3>Qué determina la satisfacción, además de la espera</h3>
+    <p>El paciente no mide su espera: la estima, y la sobreestima. La <a href="https://www.elsevier.es/es-revista-revista-calidad-asistencial-256-articulo-influencia-del-tiempo-espera-satisfaccion-S1134282X1500007X">Revista de Calidad Asistencial</a> (285 respuestas) reporta que esperas reales de 5,9 minutos se perciben como 16,7, una relación cercana a 3 a 1; que la satisfacción cae de forma significativa a partir de los 15 minutos de espera; y que <strong>informar al paciente mejora su satisfacción de forma significativa (p = 0,001), con independencia de la duración real</strong>. Informar al paciente es la medida más barata: la espera se percibe más corta aunque no se atienda más rápido.</p>
+    <p>La misma literatura identifica la calidad de la relación entre médico y paciente como el determinante más fuerte de la satisfacción global, por encima de aspectos técnicos. Esta solución no la modifica, y por eso el compromiso se limita a lo que sí modifica.</p>
+
+
+    <h3>La espera cuesta pacientes</h3>
+    <p>Además de satisfacción, la espera cuesta pacientes. El paciente ambulatorio con cobertura cambia de prestador sin costo, y la espera es una causa documentada de esa pérdida (lo que en el sector se llama <em>churn</em>). En el informe anual de tiempos de espera de Vitals, <a href="https://www.fiercehealthcare.com/practices/ppatients-switched-doctors-long-wait-times-vitals">uno de cada cinco pacientes declara haber cambiado de médico por la espera</a>, y tres de cada diez haberse retirado de un turno sin atenderse. Es un dato de Estados Unidos y se usa como orden de magnitud. Para esta red, con 161.000 pacientes activos, retener un 1% más por año son 1.610 pacientes; se pasa a dólares en el caso de negocio y depende de un dato que hoy no existe: qué proporción de los pacientes atendidos vuelve a la red. El módulo lo mide desde el primer día (el mismo paciente, otra consulta) y el primer valor completo está al año. Comparado antes y después de bajar la espera, es la medida de retención.</p>
+
+    <h3>Seis mecanismos, uno por causa</h3>
+    <p>La última columna dice qué se midió en la simulación y qué tiene respaldo en la literatura pero no un número propio.</p>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Mecanismo</th><th>Causa sobre la que actúa</th><th>Funcionamiento</th><th>Cuantificación</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Reasignación entre consultorios</td>
+            <td>Consultorio libre con sala llena</td>
+            <td>Los consultorios de una especialidad atienden como fila única. Cuando uno se libera, el sistema le ofrece el lugar al paciente que más lleva esperando en toda la sede, directo a su teléfono, y él lo acepta o lo rechaza.</td>
+            <td><strong>Medido en el modelo.</strong> Espera media de 45 a 36 minutos.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Alerta temprana</td>
+            <td>Atraso que se acumula durante el día</td>
+            <td>Cada consulta que se pasa de su turno atrasa a la siguiente, y ese atraso se arrastra el resto del día: a las 8 la espera es de 6 minutos, a las 18 de 80. El sistema avisa a recepción en el momento en que un consultorio empieza a atrasarse y le indica qué hacer (reasignar, avisar la nueva hora, priorizar), mostrando primero las acciones que ahorran más minutos. Corregir un atraso de 15 minutos a media mañana evita que llegue a una hora de espera a la tarde.</td>
+            <td>No se midió por separado: en la simulación la reasignación ocurre todo el tiempo, y en la operación real eso es lo que la alerta permite hacer.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Confirmación y desagendado</td>
+            <td>Olvido y sobreagendamiento</td>
+            <td>Contra el olvido, que explica el 44% de las ausencias, el paciente recibe el turno en su calendario al reservar y una consulta de confirmación 45 minutos antes. Si de ese 30% de ausencias se evita el 35% que mide la literatura, las ausencias bajan a cerca del 21%. Con ese dato se deja de agendar de más, y cuánto de más se agenda en cada sede lo recomienda el sistema según las ausencias medidas.</td>
+            <td><strong>Medido en el modelo</strong>, con la reducción del 35% tomada de la literatura. Con las dos palancas juntas la espera se mantiene (de 36 a 38 minutos, dentro del error del modelo) y las ausencias bajan de 32% a 21% con el mismo volumen de consultas. Sin ajustar la agenda, la confirmación sola sube la espera a 51 minutos.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Turno diferenciado por tipo</td>
+            <td>La primera consulta dura más que un control y se ofrece con el mismo turno</td>
+            <td>Al reservar desde el teléfono se le pregunta al paciente si es su primera consulta con esa especialidad; si lo es, se bloquea un turno más largo. La duración real por tipo y profesional se mide en la fase 0 y ajusta la agenda donde la brecha se repite.</td>
+            <td><strong>Medido en el modelo:</strong> con la primera consulta agendada a 1,5 veces el turno de un control, la espera baja de 38 a 25 minutos con 49 turnos diarios menos (6%). Alargar todos los turnos por igual la lleva a 20 con 89 turnos menos (11%). Cuesta turnos, y lo decide la institución.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Asistente clínico</td>
+            <td>Carga de documentación del profesional</td>
+            <td>La transcripción con borrador de historia clínica, revisado y firmado por el profesional, le evita el registro manual. Lo que está probado es que baja el tiempo de notas y el trabajo fuera de horario y mejora el desgaste del profesional (Kaiser Permanente, 7.260 médicos y 2,6 millones de consultas, <a href="https://catalyst.nejm.org/doi/full/10.1056/CAT.25.0040">NEJM Catalyst 2025</a>; ensayo aleatorizado de UCLA, <a href="https://ai.nejm.org/doi/full/10.1056/AIoa2501000">NEJM AI 2025</a>; 1.800 clínicos en cinco centros, JAMA 2026), y que el paciente percibe más atención y más tiempo con el médico, con efecto chico. Ayuda a que los médicos adopten el sistema, no a la espera.</td>
+            <td><strong>No medido como palanca de espera.</strong> La evidencia disponible no muestra que la consulta dure menos: un estudio de tiempos y movimientos (<a href="https://medinform.jmir.org/2026/1/e85580">JMIR Medical Informatics 2026</a>) encontró 15% menos documentación por consulta sin cambio en su duración, y el estudio de JAMA, media consulta más por semana. Como referencia, el modelo indica cuánto valdría si la consulta sí se acortara: 5% menos (un minuto de veinte) llevaría la espera de 38 a 30; 10%, a 23; 15%, a 17. Es una referencia, no un resultado esperado. Se mide en la fase 0.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Información al paciente</td>
+            <td>La espera percibida</td>
+            <td>El paciente sobreestima su espera en una relación cercana a 3 a 1, e informarlo mejora la satisfacción de forma significativa aunque la espera real no varíe. El sistema le muestra en su teléfono una franja horaria estimada de atención (no una hora exacta que la institución no puede garantizar), le avisa cuando hay demora, y si se lo cambia de consultorio le explica por qué.</td>
+            <td><strong>No medido en el modelo</strong>, que solo cuenta minutos reales. El efecto sobre la satisfacción está medido en la literatura (p = 0,001).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <section class="seccion">
+    <h2>Prototipo funcional</h2>
+    <p class="lede">Aplicación web navegable, <a href="./">disponible en la raíz de este sitio</a>, que simula la jornada de las ocho sedes con reloj en tiempo real. Tiene tres pestañas (Red, Sede y Paciente) y, en Red y en Sede, un conmutador entre lo que pasa hoy y los indicadores por período. Cubre las tres funcionalidades mínimas requeridas y las dos vistas del paciente. La comparación de escenarios no es una pantalla del producto: está en este documento y en el análisis reproducible.</p>
+
+    <p>El prototipo demuestra el módulo nuevo. En la solución real, la reserva de turnos, el portal del paciente y la historia clínica son sistemas con los que el módulo se integra por interfaces estándar (HL7 y FHIR), sean los que la red ya utiliza o los que incorpore. Lo que se construye es la capa que falta en la oferta actual: la gestión de la sala de espera en tiempo real.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Vista</th><th>Para quién</th><th>Qué demuestra</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Red</td>
+            <td>Dirección de Operaciones</td>
+            <td>Las ocho sedes ordenadas de peor a mejor, con la curva de espera del día de cada una. Responde a qué sede requiere atención de la Dirección en cada momento. Incluye una tira de gerencia con los cuatro indicadores del caso de negocio calculados en vivo: turnos perdidos sin aviso y su facturación no realizada, turnos liberados con aviso, horas de consultorio libre con pacientes de su especialidad esperando (lo que la reasignación recupera) y su costo en hora médica, y uso efectivo de la agenda.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Sede</td>
+            <td>Recepción</td>
+            <td>La pantalla de trabajo del mostrador: la agenda del día como lista, con buscador por nombre o documento y, en cada turno, las acciones que corresponden a su estado (llegó, pasar a consulta, avisó que no viene, no vino). Al lado, las alertas de demora con la acción sugerida y ejecución inmediata, y el motor de reasignación que envía las ofertas a los pacientes sin intervención de recepción y muestra cuáles se aceptaron y cuáles no. Debajo, la agenda del día por consultorio con cada turno dibujado en su hora prometida y en su hora real, donde se ve cómo se acumula la demora.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Paciente</td>
+            <td>El paciente y la sala de espera</td>
+            <td>Teléfono con ventana estimada de atención, aviso de demora, oferta de reasignación para aceptar o rechazar, confirmación de asistencia, aviso de inasistencia y evento de calendario. Reserva de turno que pregunta si es la primera consulta con esa especialidad y, si lo es, bloquea un turno más largo. Turnera de sala (código de turno y consultorio al que pasar) sin nombres ni especialidades.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Por período (en Red y en Sede)</td>
+            <td>Dirección y coordinación de cada sede</td>
+            <td>La misma vista de Red y de Sede tiene un conmutador "Hoy / Por período". Por período muestra los indicadores de la red o de la sede por día, mes y año, con variación contra la línea de base medida antes del despliegue, evolución diaria dentro del mes y mensual dentro del año, y desglose por sede: espera media y P90, ausencias y su facturación no realizada, uso de la agenda, turnos liberados con aviso, horas de consultorio libre con sala llena y su costo, y las métricas del producto (primeras consultas, consulta real sobre turno, atendidos dentro de los 15 minutos, reasignaciones; y como pendientes las que el prototipo no simula: confirmaciones, ofertas aceptadas, bajas por la espera, satisfacción). Es la vista con la que la Dirección sigue el proyecto y con la que se revisa cada fase antes de pasar a la siguiente. En el prototipo muestra un año simulado con el módulo desplegado por fases.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Funcionalidades del módulo</h3>
+    <p>Además de las vistas anteriores, el módulo incorpora tres funcionalidades orientadas a las causas identificadas en el análisis. La primera está en el prototipo; las otras dos forman parte del alcance del producto y se indican con su fase.</p>
+    <ul class="limpia">
+      <li>
+        <strong>Evento de calendario automático al reservar.</strong> Al confirmar el turno, la app agenda el evento en el calendario del paciente, con dos alarmas: 24 horas antes, que es la última ventana útil para avisar y liberar el turno, y 2 horas antes, que cubre el traslado. El evento no incluye especialidad ni profesional, porque el paciente puede compartir su calendario con otras personas. <em>En el prototipo.</em>
+      </li>
+      <li>
+        <strong>Confirmación proactiva 45 minutos antes.</strong> Notificación al paciente 45 minutos antes del turno: "¿Vas a llegar?", con tres opciones: sí, estoy demorado, no puedo ir. Si responde que no puede, el turno pasa al pool de reasignación y comienza la búsqueda del próximo aceptante. Si responde que está demorado, se avisa al consultorio para reajustar el orden sin cancelar. Los 45 minutos son un parámetro configurable, a validar en el piloto. <em>Fase 2.</em>
+      </li>
+      <li>
+        <strong>Asistente clínico con transcripción automática.</strong> Con consentimiento del paciente, la app transcribe la consulta en tiempo real y genera un borrador estructurado de la historia clínica: motivo, examen, diagnóstico, indicaciones. El profesional revisa, edita y firma antes de que se guarde en la HCE; sin firma, no se guarda. La integración con la historia clínica va por estándar HL7 y FHIR, con adaptadores por sistema, para no depender de un producto en un mercado fragmentado como el argentino. Le evita al profesional el registro manual durante la consulta. Sinsky et al. (<em>Annals of Internal Medicine</em>, 2016) midieron que el médico ambulatorio dedica cerca de la mitad de su jornada a la historia clínica electrónica y tareas de escritorio. La evidencia sobre estos asistentes (Kaiser Permanente, UCLA, JAMA 2026) muestra menos tiempo de notas y fuera de horario y menos desgaste del profesional, y pacientes que perciben más atención; no muestra consultas más cortas, así que no se cuenta como palanca de espera. <em>Opcional, fuera de las cuatro fases; a decidir con la medición de la fase 0.</em>
+      </li>
+    </ul>
+    <p>Tres condiciones son parte del diseño y no se negocian: consentimiento explícito del paciente para la transcripción, firma del profesional obligatoria antes de guardar cualquier registro generado, e integración por estándares abiertos con la historia clínica.</p>
+
+    <h3>Decisiones de producto</h3>
+    <ul class="limpia">
+      <li><strong>La reasignación solo ocurre dentro de la misma especialidad.</strong> No propone intercambios cruzados (uno para acá y otro para allá) aunque en minutos convengan: recepción recibiría dos indicaciones contradictorias y dejaría de confiar en el plan.</li>
+      <li><strong>El sistema ofrece y el paciente decide.</strong> En cada consultorio atiende un profesional, de modo que reasignar es cambiar de médico, y solo el paciente sabe si prefiere seguir con el suyo. La oferta le llega directo a su teléfono, sin aprobación previa de nadie, y él la acepta o prefiere esperar a su médico. Si no responde en unos minutos, cuenta como rechazo y el lugar pasa al siguiente. Recepción no revisa las ofertas: ve cuáles salieron y qué respondió cada uno.</li>
+      <li><strong>Los turnos que no se pueden mover se marcan, no se filtran a mano.</strong> Un paciente en tratamiento que tiene que verlo su médico, o que trae un estudio para revisar con ese profesional, lleva una marca de "no reasignable" que pone el médico o recepción al reservar o cuando lo saben. Esos turnos no entran al motor. Es el único dato que el sistema no puede deducir, y se carga una vez por turno en lugar de revisar cada oferta.</li>
+      <li><strong>Cada alerta lleva una acción concreta</strong>, ordenadas por cuántos minutos de espera evitan, no por cuál apareció primero. Un tablero que solo avisa la demora le deja el problema a quien lo mira.</li>
+      <li><strong>Al paciente se le comunica una ventana estimada, nunca una hora exacta.</strong> Una hora exacta es un compromiso que la institución no controla, e incumplirlo daña más la confianza que no asumirlo.</li>
+      <li><strong>Un cambio de consultorio se comunica con su motivo.</strong> Para el paciente, un cambio sin explicación no se distingue de un error.</li>
+      <li><strong>El código de turno sale del horario</strong>, no del consultorio: no cambia si el paciente cambia de consultorio y no permite saber quién es.</li>
+      <li><strong>La pantalla de sala no muestra nombres ni especialidades, y el evento de calendario tampoco.</strong> Son superficies que otras personas ven sin que el paciente lo note.</li>
+    </ul>
+    <h3>Reglas del motor de reasignación</h3>
+    <p>Cuando un consultorio se libera o cuando la carga entre consultorios se desbalancea, el motor propone movimientos aplicando, en este orden, las siguientes reglas.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Regla</th><th>Fundamento</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Solo entre consultorios de la misma especialidad</td>
+            <td>Un cardiólogo no atiende a un paciente de dermatología. Es una restricción clínica, no una preferencia.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Nadie que ya está en consulta se interrumpe</td>
+            <td>El motor solo actúa sobre pacientes en sala de espera.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Prioridad por espera acumulada</td>
+            <td>Se evalúa primero al paciente que más lleva esperando en toda la sede. La espera se cuenta desde la hora agendada o desde el ingreso, lo que ocurra después: si el paciente llegó tarde, ese tiempo no cuenta como espera.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Se respeta la cola del consultorio de destino</td>
+            <td>Un paciente reasignado no pasa por encima de quienes ya esperaban en el consultorio al que se lo mueve. Entra en esa cola según cuánto lleva esperando.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Ganancia mínima de 12 minutos</td>
+            <td>El sistema solo propone cambiar a un paciente de lista si con eso lo atienden al menos 12 minutos antes. Un cambio por menos que eso no compensa, por dos motivos. La hora estimada no es exacta: se calcula con lo que vienen durando las consultas de ese consultorio, y la siguiente puede durar más o menos. Y cada cambio tiene un costo: el paciente tiene que avisar y moverse, recepción tiene que gestionarlo, y si se le dice que va a pasar antes y después no pasa, deja de creerle al sistema. El valor de 12 sale de la simulación (ver metodología) y se ajusta por sede con los datos de la fase 0.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Sin intercambios cruzados</td>
+            <td>Si el plan pasa a un paciente de la lista del consultorio 3 a la del 6, no pasa a la vez a otro del 6 al 3. Ese intercambio puede convenir en minutos, pero recepción recibiría dos indicaciones opuestas al mismo tiempo y no podría ejecutarlas con seguridad.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">La duración prevista es la observada, no la agendada</td>
+            <td>Para estimar cuándo se libera un consultorio se usa la duración mediana de sus consultas en la jornada, no el turno nominal. Si un profesional viene tardando más que el turno, calcular con el turno subestima la cola.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Ofrece; el paciente decide</td>
+            <td>Cada movimiento del plan sale como oferta al teléfono del paciente en el momento, con el nombre del profesional y la hora nueva, y él la acepta o la rechaza en una ventana de pocos minutos. Sin respuesta, cuenta como rechazo. Un rechazo libera el lugar para el siguiente candidato. Los turnos marcados como no reasignables no entran al plan.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Reglas de alerta</h3>
+    <p>Las alertas se generan por consultorio y por paciente, cada una con una acción sugerida, y se ordenan por minutos de espera evitables y no por antigüedad. Los umbrales son configurables por sede.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Alerta</th><th>Umbral</th><th>Acción sugerida</th></tr></thead>
+        <tbody>
+          <tr><td class="rotulo">Consultorio libre con pacientes esperando</td><td>Inmediata</td><td>Llamar al siguiente. Es la de mayor valor, porque hay tiempo profesional ocioso con demanda en sala.</td></tr>
+          <tr><td class="rotulo">Consultorio con corrimiento</td><td>20 minutos de atraso</td><td>Reasignar los próximos turnos a otro consultorio de la especialidad, o avisar la nueva hora estimada a los pacientes.</td></tr>
+          <tr><td class="rotulo">Paciente con espera excedida</td><td>15 minutos</td><td>Informar la demora estimada. Por encima de 45, priorizar y disculparse.</td></tr>
+          <tr><td class="rotulo">Riesgo de ausencia</td><td>10 minutos después de la hora sin ingreso</td><td>Contactar al paciente o liberar el turno para la lista de espera. Es la ventana en la que todavía se puede recuperar.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Los umbrales de 15 y 20 minutos tienen fundamento: 15 es el punto donde la literatura detecta el quiebre de satisfacción, y 20 es donde el corrimiento deja de ser recuperable dentro del mismo turno y se traslada a los siguientes.</p>
+
+    <p>Cada regla está documentada en el código junto a la lógica que la implementa.</p>
+  </section>
+
+  <section class="seccion">
+    <h2>Plan de implementación</h2>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Fase</th><th>Duración</th><th>Alcance</th><th>Compromiso</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">0. Medición y línea de base</td>
+            <td>3 a 4 semanas</td>
+            <td>Una sede piloto</td>
+            <td>Tablero operativo en funcionamiento. Línea de base de espera, ausencias y satisfacción, con sus causas. Sin compromiso de mejora en esta fase.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">1. Reasignación</td>
+            <td>4 a 6 semanas</td>
+            <td>Piloto y dos sedes más</td>
+            <td>Los consultorios de una especialidad atienden como una fila única. Vista de paciente y turnera de sala. Espera media de 45 a 36 minutos.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">2. Confirmación y ajuste de la agenda</td>
+            <td>8 a 10 semanas</td>
+            <td>Red completa</td>
+            <td>Confirmación desde el teléfono, evento de calendario, y agenda ajustada al ausentismo medido. Mantiene la espera de la fase 1 (36 a 38 minutos, dentro del error) y baja las ausencias sin aviso a 21% con el mismo volumen de consultas.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">3. Primera consulta más larga</td>
+            <td>2 a 3 semanas, después de la fase 2</td>
+            <td>Red completa</td>
+            <td>La primera consulta con una especialidad se agenda a 1,5 veces el turno de un control. Espera media de 38 a 25 minutos, y el 10% que más espera pasa de 84 a 60. Cuesta 6% de las consultas (USD 129.000 al año) y se paga con la retención: alcanza con retener un 1% más de los pacientes activos por año; tomando 1,5%, sobra. La fase 0 mide cuánto dura de verdad la primera consulta por especialidad para fijar el multiplicador. Alargar todos los turnos por igual (20 minutos, 11% menos de consultas) queda fuera del alcance: cuesta más por minuto ganado (89 consultas por 18 minutos, contra 49 por 13).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Fundamento de la fase 0</h3>
+    <p>La agenda opera actualmente sobre teléfono y planillas: no existe registro. Tres semanas de medición en una sede resuelven lo que la información inicial no indica y de lo que depende el resultado: cuántos consultorios comparten especialidad en cada sede, cuánto excede la consulta a su turno, discriminando primera vez de control y por profesional, y cuáles son las causas de ausencia.</p>
+    <p><strong>Cómo se mide la satisfacción.</strong> Con el mismo instrumento validado que usa la literatura local (CAHPS adaptado), preguntando por la espera y no solo por la atención en general. En la fase 0, encuesta presencial al salir de la consulta en la sede piloto, hecha por una persona ajena a recepción, hasta juntar 400 casos: satisfacción con la espera de hoy (0 a 10), cuánto cree que esperó, satisfacción con la atención y qué cambiaría, registradas junto con la espera real que el módulo midió para ese turno, sin nombre. En operación, las dos primeras preguntas desde el teléfono cuando el módulo registra que la consulta terminó, con respuesta de un toque y no más de una vez por mes al mismo paciente; cada respuesta queda unida a la espera real, y por eso se reporta por sede y período la satisfacción con la espera, la espera percibida contra la real y la proporción que la califica con 7 o más. Una muestra presencial trimestral corrige el sesgo de quién responde. Las causas de ausencia se relevan por mensaje dentro de las dos horas del turno perdido, con una muestra telefónica de no respondedores para evitar medir únicamente al segmento que lee mensajes.</p>
+    <p>Sin esa medición inicial no hay forma de demostrar la mejora ni de decidir con datos qué ajustar en las fases siguientes: cualquier cifra posterior se puede discutir.</p>
+
+    <h3>Secuencia de las fases 1 y 2</h3>
+    <p>La reasignación se ejecuta primero por tres razones. No modifica la agenda ni los acuerdos con los profesionales: es la fase que menos roces genera y la que da resultado más rápido, y no depende de que los pacientes adopten nada. Es la única palanca que baja la espera por sí sola: la fase 2 sin la fase 1 deja la espera en 47 minutos (peor que hoy), y los recordatorios solos, en 59; la reasignación es lo que absorbe la variabilidad de llegadas. Y su ganancia es la que la fase 2 protege: sin ella no habría nada que proteger, y el proyecto llegaría al segundo mes sin una mejora visible.</p>
+    <p>La confirmación y el ajuste de la agenda constituyen una única fase porque, separadas, la primera empeora la espera. Obtener confirmación sin rediseñar lleva la espera de 36 a 51 minutos, peor que hoy: los pacientes recuperados ingresan en una agenda construida bajo el supuesto de que no concurrirían, y se pierde más que la ganancia de la fase 1. Con la agenda ajustada, la fase 2 conserva la espera de la fase 1 y baja las ausencias de 32% a 21% con el mismo volumen de consultas: no baja más la espera, protege lo ganado. Comenzar por los recordatorios, que es lo técnicamente más simple, produce un retroceso visible en el segundo mes.</p>
+
+    <p><strong>Por qué no se agenda cada turno con su duración real.</strong> La consulta dura en promedio 1,5 veces el turno (31 minutos por turno de 20). Se podría cerrar esa brecha del todo, dando a cada turno su duración real, y la espera queda en 6 minutos; pero se paga con un tercio de las consultas, porque en la misma jornada entran muchos menos turnos. Medido sobre la fase 2: con todos los turnos 15% más largos, 20 minutos de espera y 11% menos de consultas; 30% más largos, 11 minutos y 23% menos; 50% más largos (la duración real), 6 minutos y 33% menos. La brecha entre turno y consulta es la causa de fondo, y solo se cierra resignando volumen (o acortando la consulta real, que la evidencia sobre asistentes de transcripción no respalda). Por eso la propuesta empieza por las dos palancas sin costo y después ofrece las opciones con costo de la más barata a la más cara por minuto ganado: la primera consulta más larga (6% de consultas por 13 minutos menos) antes que alargar todos los turnos (11% por 18 minutos).</p>
+
+    <p><strong>Por qué no desagendar antes de bajar las ausencias.</strong> Dejar de sobreagendar también baja la espera en la fase 1, pero con las ausencias de hoy (30%) cada turno que se deja de ofrecer es un paciente menos atendido, porque no hay quien ocupe el hueco. Medido con reasignación y sin confirmación: con la mitad de la sobreagenda, 29 minutos y 49 consultas menos por día (6%); casi sin sobreagenda, 27 minutos y 64 menos (8%); sin ninguna, 22 minutos y 97 menos (12%). El mismo movimiento después de la fase 2, con las ausencias en 21%, lleva la espera a 31 minutos perdiendo 28 consultas: para el mismo minuto de espera, desagendar antes de bajar las ausencias cuesta dos a tres veces más consultas que hacerlo después. Es la razón de fondo del orden: primero reasignar, después bajar las ausencias, y recién ahí decidir cuánta sobreagenda se saca, con la tasa de ausencia real medida.</p>
+
+    <h3>Métricas que acompañan al producto</h3>
+    <p>El análisis se apoya en supuestos declarados; el producto los reemplaza por datos propios y los sigue mientras opera. Estas son las métricas que el módulo registra de forma continua, desde qué fase existen y para qué sirven. Todas se ven en la vista Por período, en la red y en cada sede, por día, mes y año; las que el prototipo no puede simular figuran ahí como pendientes.</p>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Métrica</th><th>Qué mide</th><th>De dónde sale</th><th>Desde</th><th>Para qué sirve</th></tr></thead>
+        <tbody>
+          <tr><td class="rotulo">Espera media, percentil 90 y proporción atendida dentro de los 15 minutos</td><td>La demora del paciente respecto de su hora, en total y por sede</td><td>Registro de llegada, inicio y fin de cada consulta</td><td>Fase 0</td><td>Es el indicador del contrato con el paciente; los 15 minutos son el umbral de satisfacción de la literatura</td></tr>
+          <tr><td class="rotulo">Ausencias sin aviso y turnos liberados con aviso</td><td>Cuántos turnos se pierden y cuántos se recuperan a tiempo</td><td>Desenlace de cada turno</td><td>Fase 0</td><td>Mide el efecto de la confirmación y alimenta la lista de espera</td></tr>
+          <tr><td class="rotulo">Uso efectivo de la agenda</td><td>Consultas atendidas sobre turnos ofrecidos</td><td>Agenda y desenlaces</td><td>Fase 0</td><td>Muestra que ajustar la agenda no pierde volumen</td></tr>
+          <tr><td class="rotulo">Consultorio libre con sala llena</td><td>Horas de consultorio sin paciente mientras hay gente esperando, separando si hay alguien de la misma especialidad (recuperable reasignando) o solo de otras (se resuelve planificando la agenda), y su costo</td><td>Estado de consultorios y sala minuto a minuto</td><td>Fase 0</td><td>Es la capacidad que recupera la reasignación</td></tr>
+          <tr><td class="rotulo">Sobreagendamiento</td><td>Minutos de turno ofrecidos sobre minutos de consultorio disponibles, por especialidad y sede</td><td>Agenda tal como está armada</td><td>Fase 0</td><td>El análisis asume 10% (1,10 minutos de turno por minuto disponible); es la palanca de la fase 2 y define cuánto se ajusta la agenda sin perder volumen</td></tr>
+          <tr><td class="rotulo">Proporción de primeras consultas, por especialidad</td><td>Qué parte de los turnos es primera consulta</td><td>La pregunta al reservar el turno</td><td>Fase 0</td><td>Reemplaza el supuesto del 17% del análisis y dimensiona el turno diferenciado</td></tr>
+          <tr><td class="rotulo">Duración real de la consulta sobre el turno agendado, por especialidad y por tipo</td><td>Cuánto más dura la consulta que el turno agendado</td><td>Inicio y fin de cada consulta</td><td>Fase 0 (por sede en las fases 0 y 1; por profesional cuando el equipo médico lo acuerde)</td><td>Decide si conviene el turno diferenciado y cuánto</td></tr>
+          <tr><td class="rotulo">Reasignaciones propuestas, ofrecidas y aceptadas, y minutos ahorrados</td><td>Cuánto propone el motor y cuánto aceptan recepción y pacientes</td><td>Motor de reasignación y respuestas</td><td>Fase 1</td><td>Criterio de salida de la fase 1 (aceptación superior al 60%) y ajuste de la ganancia mínima</td></tr>
+          <tr><td class="rotulo">Confirmaciones enviadas y respondidas, y avisos de inasistencia</td><td>Cuántos pacientes responden y cuántos avisan que no van</td><td>Mensajes y respuestas</td><td>Fase 2</td><td>Mide la palanca que baja las ausencias y calibra cuánto se puede dejar de sobreagendar</td></tr>
+          <tr><td class="rotulo">Pacientes que vuelven</td><td>Proporción de los pacientes atendidos en un período que vuelven a atenderse en la red dentro de una ventana (12 meses por defecto, porque un paciente activo hace 2 consultas por año; configurable por especialidad), por sede</td><td>Registro de turnos del propio módulo (el mismo paciente, otra consulta)</td><td>Fase 0, con el primer valor completo al año</td><td>Mide la retención y permite ver si al bajar la espera vuelven más pacientes; es el dato para decidir si conviene resignar turnos por menos espera</td></tr>
+          <tr><td class="rotulo">Satisfacción con la espera</td><td>Cómo califica el paciente su espera (0 a 10) y cuánto cree que esperó, unido a la espera real de ese turno</td><td>Dos preguntas desde el teléfono al terminar la consulta; encuesta presencial en la fase 0 y una muestra trimestral para corregir sesgo</td><td>Fase 0, repetida por período</td><td>Permite comparar la espera medida con la que el paciente percibe</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Estrategia de despliegue</h3>
+    <p>Tres olas: una sede, luego dos, luego cinco. Las sedes se ubican en zonas distintas y sus volúmenes varían hasta tres veces entre sí. El piloto se selecciona por volumen intermedio y problema visible: una sede que anda bien no deja ver el efecto, y una que anda muy mal mezcla el efecto del sistema con el de arreglar un caso extremo.</p>
+
+    <h3>Horas de trabajo</h3>
+    <p>El proyecto completo son <strong>2.750 horas de trabajo</strong>, repartidas así por perfil y por fase. Es lo que se cotiza; cuántas personas las hacen y en cuánto tiempo se decide con la institución (ver Plazo). La fase 3 no suma horas de desarrollo: la pregunta de primera consulta ya está en la reserva y el turno más largo es un parámetro por especialidad; sus 2 a 3 semanas son de puesta en marcha y seguimiento, dentro de las horas de implantación.</p>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Horas por perfil y fase, con las duraciones de referencia de cada fase. Desarrollo concentra la mitad; implantación crece con las fases porque el trabajo pasa de construir el módulo a ponerlo en marcha en ocho sedes con equipos y costumbres distintas.</caption>
+        <thead><tr><th>Perfil</th><th class="num">Fase 0</th><th class="num">Fase 1</th><th class="num">Fase 2</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          <tr><td>Responsable de producto</td><td class="num">70</td><td class="num">100</td><td class="num">180</td><td class="num">350</td></tr>
+          <tr><td>Desarrollo</td><td class="num">210</td><td class="num">400</td><td class="num">720</td><td class="num">1.330</td></tr>
+          <tr><td>Diseño</td><td class="num">70</td><td class="num">100</td><td class="num">90</td><td class="num">260</td></tr>
+          <tr><td>Implantación y capacitación</td><td class="num">70</td><td class="num">200</td><td class="num">540</td><td class="num">810</td></tr>
+          <tr><td><strong>Total</strong></td><td class="num"><strong>420</strong></td><td class="num"><strong>800</strong></td><td class="num"><strong>1.530</strong></td><td class="num"><strong>2.750</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>El responsable de producto suma 350 horas en todo el proyecto, un día y medio por semana: su trabajo es decidir prioridades, validar con la institución y destrabar, y en un proyecto de este tamaño no ocupa más. Cargarle una jornada completa encarecería el proyecto sin acelerarlo.</p>
+
+    <h3>Plazo</h3>
+    <p>La información inicial no fija una fecha límite. Las 15 a 20 semanas de las fases 0 a 2, más 2 a 3 de la fase 3, son una propuesta, no un requisito. Lo fijo son las 2.750 horas; cómo se reparten en el calendario se decide con la institución:</p>
+    <ul class="limpia">
+      <li><strong>Con más tiempo, menos horas por semana.</strong> Las mismas horas en 30 semanas son 90 por semana en vez de 150. El costo total no baja, pero el desembolso mensual sí.</li>
+      <li><strong>Con menos tiempo, más horas por semana, hasta un límite.</strong> Se puede comprimir hasta 12 semanas sumando horas de desarrollo, pero dos partes no se aceleran con más horas: la fase 0 necesita al menos tres semanas de datos reales para que la línea de base sea válida, y el despliegue por olas requiere que cada sede se estabilice antes de abrir la siguiente.</li>
+      <li><strong>Si hay una fecha comprometida</strong>, por ejemplo el inicio de la temporada de mayor demanda, se dimensiona el equipo hacia atrás desde esa fecha.</li>
+    </ul>
+  </section>
+
+  <section class="seccion">
+    <h2>Riesgos y mitigación</h2>
+
+    <div class="tabla-wrap">
+      <table>
+        <caption>Ordenados por exposición.</caption>
+        <thead><tr><th>Riesgo</th><th>Exposición</th><th>Mitigación</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Despliegue de la confirmación sin ajuste de la agenda<span class="nota-fila">Es lo técnicamente más simple y la presión por anticiparlo es previsible</span></td>
+            <td>Alta</td>
+            <td>Ambas constituyen una única fase con un único criterio de salida: espera media que no supere la de la fase 1 en ninguna sede, ausentismo por debajo del 22% y ocupación sin caída superior a 3 puntos. El retroceso está cuantificado: de 36 a 51 minutos, peor que hoy.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Sedes sin consultorios que compartan especialidad</td>
+            <td>Media, impacto alto</td>
+            <td>Sin consultorios pares no existe capacidad hacia la cual reasignar y la fase 1 no produce resultado. Se releva en la fase 0, antes de comprometer resultados. Si la red está fragmentada, el valor se recompone sobre las fases 0 y 2.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Integración con sistemas existentes</td>
+            <td>Media, impacto medio</td>
+            <td>El módulo expone e importa datos por HL7 y FHIR, que es lo que hablan los HIS, LIS y EMR del mercado. La fase 0 incluye el relevamiento técnico. El módulo opera de forma autónoma si es necesario: la integración mejora la carga de datos, no condiciona el funcionamiento.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Resistencia del equipo médico<span class="nota-fila">El tablero muestra el corrimiento de cada consultorio y admite lectura como control individual</span></td>
+            <td>Media alta, impacto alto</td>
+            <td>Durante las fases 0 y 1 los indicadores se reportan por sede, nunca por profesional. La eventual conversación sobre desempeño individual corresponde a la institución y es posterior a la adopción.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Baja adopción por parte de recepción</td>
+            <td>Media, impacto alto</td>
+            <td>El motor no le agrega trabajo a recepción: las ofertas salen solas y el que decide es el paciente. Lo que recepción sí usa (alertas con acción, agenda del día) se diseñó para el mostrador: cada alerta dice qué hacer y el plan no propone intercambios cruzados, que en el mostrador no se entienden. La tasa de aceptación de los pacientes se monitorea como indicador de producto.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Baja penetración digital de la cartera</td>
+            <td>Media, impacto medio</td>
+            <td>Se releva en el piloto. Canal múltiple: aplicación, mensajería, SMS, llamado.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Conectividad intermitente en alguna sede</td>
+            <td>Media, impacto medio</td>
+            <td>El tablero sigue funcionando en la sede sin conexión y sincroniza cuando vuelve. La solución no puede ser menos confiable que la planilla que reemplaza.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Exposición de datos de salud</td>
+            <td>Baja, impacto alto</td>
+            <td>Minimización por diseño: ninguna pantalla compartida muestra identidad ni especialidad.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <h2>Compliance y protección de datos</h2>
+
+    <p>La información inicial menciona HIPAA sin indicar el país. Asumiendo Argentina, el marco vinculante es la <strong>Ley 25.326</strong> de Protección de Datos Personales, que clasifica los datos de salud como sensibles (artículos 2 y 7), y la <strong>Ley 26.529</strong> de Derechos del Paciente. HIPAA no resulta vinculante, pero la solución se diseñó contra sus estándares: es el marco más exigente de los dos y, de confirmarse que la operación es en Estados Unidos, no se requeriría retrabajo.</p>
+
+    <h3>Minimización de datos por superficie</h3>
+    <p>Un dato de salud no se expone únicamente ante una base vulnerada. Se expone cuando la pantalla de sala muestra un nombre junto a una especialidad frente a treinta personas, o cuando un evento de calendario que indica Oncología aparece en la agenda que el paciente comparte con su entorno laboral. La protección se resuelve definiendo, para cada pantalla, el mínimo de información que necesita mostrar.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Superficie</th><th>Quién la ve</th><th>Qué muestra</th><th>Qué nunca muestra</th></tr></thead>
+        <tbody>
+          <tr><td class="rotulo">Tablero de recepción</td><td>Personal autorizado</td><td>Nombre, especialidad, profesional, estado</td><td>Documento, teléfono</td></tr>
+          <tr><td class="rotulo">Pantalla de sala</td><td>Cualquier persona presente</td><td>Código de turno y consultorio</td><td>Nombre, especialidad, ningún dato identificatorio</td></tr>
+          <tr><td class="rotulo">Teléfono del paciente</td><td>El paciente, autenticado</td><td>Su turno completo</td><td>Datos de otros pacientes</td></tr>
+          <tr><td class="rotulo">Evento de calendario</td><td>Quien acceda al calendario del paciente</td><td>Turno médico y la sede</td><td>Especialidad, profesional</td></tr>
+          <tr><td class="rotulo">Vista de red</td><td>Dirección de Operaciones</td><td>Indicadores por sede</td><td>Datos individuales</td></tr>
+          <tr><td class="rotulo">Base de datos operativa</td><td>Equipo técnico del proveedor</td><td>Eventos de turno con un identificador interno</td><td>Nombre, documento ni teléfono en claro</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="limpia">
+      <li><strong>Código de turno no reversible a la identidad.</strong> Se deriva del horario, no permite reconstruir la identidad del paciente y no cambia al reasignarlo.</li>
+      <li><strong>Métricas por sede, no por profesional</strong>, durante las fases 0 y 1.</li>
+      <li><strong>Retención mínima.</strong> El detalle individual se requiere durante la jornada; tras el cierre se conservan indicadores agregados.</li>
+      <li><strong>Trazabilidad de acceso</strong> a datos identificatorios, para acreditar cumplimiento ante una auditoría.</li>
+    </ul>
+
+    <p>Cada una de estas decisiones es verificable en el prototipo.</p>
+
+    <h3>Arquitectura multitenant y anonimización en la base de datos</h3>
+    <p>El módulo se ofrece como producto para más de una institución, así que se diseña desde el inicio como <strong>multitenant</strong>: una misma instalación atiende a varias instituciones sin que los datos de una sean alcanzables desde otra.</p>
+    <ul class="limpia">
+      <li><strong>Aislamiento por institución en la base.</strong> Cada fila lleva el identificador de la institución y la base aplica políticas de acceso por fila: una consulta ejecutada en el contexto de una institución no puede devolver datos de otra, aunque el código de la aplicación tenga un error. Dentro de la institución, las sedes son ámbitos de permiso: recepción de una sede ve su sede; la Dirección, la red.</li>
+      <li><strong>Claves de cifrado por institución.</strong> Los datos identificatorios se cifran con una clave propia de cada institución. Dar de baja a un cliente es destruir su clave.</li>
+      <li><strong>Instancia dedicada como opción.</strong> Si el pliego exige que los datos no compartan infraestructura con terceros o residan en el país, la misma aplicación se despliega en una instancia propia de la institución. El código no cambia; cambia el despliegue.</li>
+    </ul>
+    <p>Dentro de cada institución, la base separa lo que identifica a la persona de lo que describe la operación, para que el dato de salud no viaje pegado al nombre:</p>
+    <ul class="limpia">
+      <li><strong>Seudonimización.</strong> Nombre, documento y teléfono viven en una tabla aparte, cifrada, y el resto del sistema los referencia por un identificador interno sin significado. Los eventos de turno (agendado, llegó, pasó a consulta, esperó tanto, se reasignó) guardan solo ese identificador. Quien lee la tabla de eventos ve una operación, no una persona.</li>
+      <li><strong>Anonimización para el análisis.</strong> Los indicadores de gerencia, el año de operación y cualquier análisis se calculan sobre datos sin identificar y agregados por sede. El detalle individual se elimina al cierre de la jornada; lo que queda es lo que se muestra en la vista Por período.</li>
+      <li><strong>El asistente clínico no guarda audio ni transcripción.</strong> Solo el borrador que el profesional revisa y firma se envía a la historia clínica de la institución, por HL7 y FHIR. El módulo no conserva contenido clínico.</li>
+      <li><strong>Sin datos identificatorios en registros técnicos.</strong> Los registros de aplicación y de auditoría guardan el identificador interno, nunca nombre ni documento; la trazabilidad de quién accedió a datos identificatorios se guarda aparte.</li>
+    </ul>
+  </section>
+
+  <section class="seccion">
+    <h2>Diferenciadores frente a la competencia</h2>
+    <p class="lede">La información inicial indica que existen otros dos proveedores en competencia, sin identificarlos, lo que indica un proceso de selección entre varios oferentes, es decir, una licitación. Se relevó la oferta local de software de gestión de turnos para establecer contra qué se compite, y los diferenciadores se ordenan según los criterios con los que habitualmente se evalúa una licitación: cumplimiento de requisitos, oferta técnica y oferta económica.</p>
+
+    <h3>Oferta actual del mercado</h3>
+    <p>La oferta argentina de gestión de turnos se organiza en tres categorías, según dos comparativas independientes del sector (<a href="https://turno.online/blog/mejores-software-de-turnos-para-medicos-en-argentina">Turnero Online</a> y <a href="https://booksolut.com/blog/mejor-software-gestion-turnos-clinicas-2026">Booksolut</a>, ambas elaboradas por proveedores, lo que se tuvo en cuenta al interpretarlas):</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Categoría</th><th>Ejemplos</th><th>Alcance</th><th>Limitación</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Marketplace de captación</td>
+            <td>Doctoralia (Docplanner)</td>
+            <td>Visibilidad y captación de pacientes nuevos, reseñas, agenda</td>
+            <td>La operación interna. Es un canal de venta, no una herramienta de gestión.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Agenda con recordatorios</td>
+            <td>Turnito, Turnero Online, Turnos.app, Booksolut</td>
+            <td>Agenda por profesional, recordatorios por WhatsApp a 24 y 2 horas, cobros, algunos con lista de espera</td>
+            <td>Orientados al consultorio individual o al centro de baja escala. Sin visión de red.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Historia clínica electrónica</td>
+            <td>Medicai (Medicloud) y HCE genéricas</td>
+            <td>Historia clínica, receta electrónica, cumplimiento normativo, integración con laboratorio</td>
+            <td>La agenda es un módulo secundario. Costos altos.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Ninguna de las tres categorías ofrece lo que esta propuesta sitúa en el centro:</strong> gestión de la sala de espera en tiempo real, reasignación entre consultorios, estimación de espera para el paciente ni vista consolidada de varias sedes. La oferta relevada resuelve la reserva del turno; ninguna resuelve lo que ocurre desde que el paciente llega hasta que es atendido.</p>
+
+    <p>Los dos proveedores en competencia provienen probablemente de la segunda o la tercera categoría. Frente a ambas, esta propuesta parte con una ventaja que no depende de la plataforma que la red elija: <strong>el módulo se integra en lugar de reemplazar</strong>, por HL7 y FHIR, con la agenda, el portal de paciente y la historia clínica que la red tenga, lo que un proveedor de agenda no ofrece y una HCE genérica no ofrece hacia afuera. Para una red de ocho sedes que opera con planillas y probablemente cuente con algún sistema heredado, la integración es la diferencia entre un piloto y un despliegue.</p>
+
+    <h3>Cómo se sostiene cada criterio de evaluación</h3>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Criterio habitual</th><th>Con qué se responde</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Cumplimiento de requisitos mínimos</td>
+            <td>Las tres funcionalidades requeridas (agenda del día, estado en tiempo real, alertas de demora) están construidas y son navegables en el prototipo, no descriptas. Compliance de datos de salud resuelto por diseño y verificable.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Oferta técnica</td>
+            <td>Módulo que ningún oferente de las categorías relevadas ofrece: sala de espera en tiempo real, reasignación con aceptación del paciente, estimación de espera, vista de red.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Oferta económica</td>
+            <td>Precio de referencia por sede y mes, implantación única y mensajería a costo, detallados en el caso de negocio. Revisión conjunta al cierre de cada fase, con los indicadores medidos desde la fase 0, que puede modificar el alcance de la siguiente.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Las diferencias concretas del módulo se detallan a continuación.</p>
+
+    <h3>Gestión de la sala, no solo de la agenda</h3>
+    <p>Un producto de agenda concluye cuando el turno queda reservado. El problema de esta red comienza allí: 45 minutos de espera con capacidad ociosa es un problema de lo que ocurre dentro de la sede, minuto a minuto. Reasignación en tiempo real, alertas con acción y vista de red no existen en la oferta relevada.</p>
+
+    <h3>Reducción de la espera percibida, no solo de la real</h3>
+    <p>Los recordatorios que ofrece el mercado se comunican con el paciente antes del turno. Ninguno lo hace durante la espera, que es cuando la información tiene mayor peso. Es lo más barato que se puede hacer y la oferta relevada no lo hace: informar al paciente mejora su satisfacción aunque la espera real no varíe. La vista de paciente no es un complemento del tablero; es la medida que más rinde por lo que cuesta.</p>
+
+    <h3>El sistema ofrece, el paciente decide</h3>
+    <p>Mover pacientes de lista sin preguntarles es más simple de construir y peor de operar: reasignar es cambiar de profesional, y si al paciente le importa seguir con su médico solo él lo sabe. Por eso el sistema no mueve a nadie: le ofrece el cambio al paciente en su teléfono, en una ventana breve para no perder el consultorio libre, y él decide. Nadie tiene que aprobar la oferta antes, así que el consultorio libre no espera a que alguien mire el tablero y recepción no carga con un paso más. Lo que el sistema no puede saber solo (un paciente en tratamiento que tiene que verlo su médico, un estudio a revisar con ese profesional) se marca una vez en el turno como "no reasignable" y queda afuera del motor. Un sistema que reordena la sala sin consultar deja de utilizarse en pocos días; uno que pregunta convierte la reasignación en una atención, no en una imposición.</p>
+
+    <h3>Distinción entre intervenciones con y sin costo de volumen</h3>
+    <p>Las fases 1 y 2 reducen la espera un quinto y las ausencias un tercio sin perder consultas. Bajar de ahí cuesta consultas: la fase 3 (primera consulta más larga) cuesta 6% y se paga con los pacientes que retiene, por eso está en el alcance; alargar todos los turnos (11%) queda como decisión de la institución. Se presentan separadas para que se vea qué cuesta cada minuto.</p>
+
+    <h3>Alcance explícito del compromiso</h3>
+    <p>La calidad de la relación entre el médico y el paciente es el determinante más fuerte de la satisfacción según la literatura, y esta solución no la modifica. Si la insatisfacción de la red se origina principalmente allí, mejorarán los indicadores operativos y no la satisfacción global. Por ese motivo la fase 0 releva causas y no solo puntajes: saber de dónde viene la insatisfacción antes de prometer resolverla.</p>
+  </section>
+
+  </div>
+
+  <div class="pestana" id="tab-negocio">
+
+  <div class="indice">
+    <p class="eyebrow" style="margin-bottom:0.75rem">Contenido</p>
+    <ol>
+      <li>Caso de negocio: beneficios, oferta económica, retorno para la institución, modelo de contratación y decisiones pendientes</li>
+    </ol>
+    <p class="nota-indice">Los supuestos, la calibración del modelo y los resultados de la simulación en los que se apoya esta parte están en la pestaña Anexo, igual que el caso del módulo como producto para Intuit Salud.</p>
+  </div>
+
+  <section class="seccion">
+    <h2>Caso de negocio</h2>
+    <p class="lede">Los beneficios se calculan primero en consultas, horas y minutos, y después se pasan a dólares con los supuestos de la tabla siguiente, cada uno con su fuente y su rango. Todos los importes están en dólares estadounidenses. Los valores relevados en pesos se convirtieron a ARS 1.515 por dólar, cotización del Banco Nación al 15 de agosto de 2026, y se indican entre paréntesis donde la fuente es local.</p>
+
+    <h3>Supuestos económicos</h3>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Parámetro</th><th>Valor</th><th>Fundamento</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Facturación bruta por consulta</td>
+            <td>USD 33 (ARS 50.000)</td>
+            <td>Referencia: los aranceles éticos 2026 de los colegios médicos: consulta general USD 30 a 33 (ARS 46.000 a 49.500), especialista USD 41 (ARS 62.000) (<a href="https://consejomedicolp.org.ar/honorarios-eticos-minimos/">La Pampa</a>, <a href="https://colmedicosantafe1.org.ar/?page_id=393">Santa Fe</a>). Se adopta un valor intermedio para una mezcla de especialidades.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Parte de la consulta que queda en la institución</td>
+            <td>30%: USD 10 de los USD 33</td>
+            <td>En consultorios privados el médico cobra un porcentaje de cada consulta que atiende. El reparto varía por institución y no hay dato público; se toma 70% para el médico y 30% para la clínica, que es un arreglo habitual y del lado bajo. Es el segundo dato que se le pide a la red.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Hora médica</td>
+            <td>USD 66 (ARS 100.000)</td>
+            <td>Valor intermedio entre los publicados por colegios médicos en 2026: USD 53 (ARS 80.475, La Pampa) y USD 91 (ARS 138.000, <a href="https://colemed8.org.ar/servicio/valor-hora-medica-colegio/">Resolución 1108/2026</a>).</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Costo del equipo</td>
+            <td>USD 3.000 por persona y mes, costo empresa (ARS 4.500.000)</td>
+            <td>Costo empresa de <a href="https://teclab.edu.ar/tecnologia-y-desarrollo/cuanto-cobra-un-programador-en-argentina/">un desarrollador senior en Argentina en 2026</a>: entre USD 2.000 y 4.000 por mes según experiencia y cargas sociales. Se toma el punto medio, USD 3.000.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Días operativos</td>
+            <td>22 por mes</td>
+            <td>Jornada de lunes a viernes.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Beneficios</h3>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Valores diarios para la red completa, alcance de las fases 0 a 2; lo que agrega y cuesta la fase 3 está en la tabla de retorno. La fila "con los liberados ocupados" supone que los turnos liberados con aviso se vuelven a dar.</caption>
+        <thead><tr><th>Indicador</th><th class="num">Hoy</th><th class="num">Con la solución</th><th>Lectura</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Turnos perdidos sin aviso</td>
+            <td class="num">368</td>
+            <td class="num">213</td>
+            <td>155 turnos diarios menos se pierden sin aviso. De esos, 41 pasan a avisar con tiempo, 7 se atienden de más, y el resto (107) son turnos que ya no hace falta ofrecer: la agenda pasa de 1.220 a 1.110 turnos ofrecidos porque deja de sobreagendar para cubrir ausencias que ya no ocurren.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Turnos liberados con aviso</td>
+            <td class="num">60</td>
+            <td class="num">101</td>
+            <td>41 turnos diarios adicionales que se pueden volver a dar.</td>
+          </tr>
+          <tr class="destacada">
+            <td class="rotulo">Uso efectivo de la agenda, con los liberados ocupados</td>
+            <td class="num">69%</td>
+            <td class="num">81%</td>
+            <td>Los liberados con aviso pasan de 60 a 101 por día: <strong>40 consultas adicionales por día</strong> si se vuelven a dar.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Horas de consultorio libre con sala llena<span class="nota-fila">Recuperables: con alguien de la misma especialidad esperando</span></td>
+            <td class="num">43 h<br><small>21 recuperables</small></td>
+            <td class="num">24 h<br><small>0 recuperables</small></td>
+            <td>Hoy hay 43 horas por día de consultorio libre con gente esperando en la misma sede. 21 son con alguien de la misma especialidad esperando: esas las recupera la reasignación y valen <strong>USD 1.390 por día</strong> de hora médica. Las otras 22 son consultorio libre con gente de otra especialidad esperando; no se recuperan moviendo pacientes sino planificando la agenda entre especialidades, y quedan en 30 h con la fase 1 y 24 h con la fase 2. Si el profesional cobra por consulta, el que pierde ese tiempo es el profesional; para la clínica es capacidad para atender más, ya contada en la fila anterior.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Espera media del paciente</td>
+            <td class="num">45 min</td>
+            <td class="num">36 min</td>
+            <td>36 con la fase 1 y 38 con la fase 2; 25 con la fase 3. Retiene pacientes. Se calcula más abajo; no entra en el retorno porque no se sabe cuántos pacientes pierde la red por año.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Cuánto vale en dólares lo que se recupera</h3>
+    <p>De la tabla de arriba, lo único que se puede pasar a dólares con los datos que hay son las consultas adicionales. La cuenta, paso a paso:</p>
+    <ol class="pasos">
+      <li>Hoy, 60 turnos por día se liberan con aviso: el paciente avisa que no va. Con la confirmación desde el teléfono pasan a ser 101. Son <strong>41 turnos más por día</strong> que quedan libres con tiempo para dárselos a otro paciente.</li>
+      <li>Si hay quien ocupe esos lugares, se llenan: <strong>40 consultas más por día</strong> que hoy no se hacen. Se llenan agendando de antemano un poco más de lo que entra, sabiendo cuántos turnos se liberan con aviso cada día: una sobreagenda chica y medida, distinta de la de hoy, que se hace a ciegas para cubrir ausencias que nadie avisa. Si además hay lista de espera, mejor.</li>
+      <li>A la clínica le quedan <strong>USD 10 por consulta</strong> (el 30% de los USD 33 que factura; ver Supuestos económicos).</li>
+      <li>40 consultas por día, 22 días por mes, 12 meses: 10.560 consultas por año. Por USD 10 cada una: <strong>USD 106.000 por año</strong>.</li>
+    </ol>
+
+    <div class="tabla-wrap">
+      <table>
+        <caption>40 consultas más por día, 22 días por mes, 12 meses, USD 10 por consulta para la clínica.</caption>
+        <thead><tr><th>Consultas más por día</th><th class="num">Le queda a la clínica por consulta</th><th class="num">Por mes</th><th class="num">Por año</th></tr></thead>
+        <tbody>
+          <tr class="destacada"><td class="rotulo">40</td><td class="num">USD 10</td><td class="num">USD 8.800</td><td class="num"><strong>USD 106.000</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Todo esto vale si hay demanda para esos lugares</strong>. No hace falta una lista de espera formal; alcanza con que la agenda se llene con días de anticipación, que es lo habitual en el país. Es el supuesto de menor confianza del análisis: no lo dio la red y no hay dato público. Si la agenda no se llena, los 40 turnos quedan vacíos, esta cifra es cero, y lo que la clínica gana es lo de las otras filas de la tabla: menos espera, que retiene pacientes, y menos tiempo de médico perdido. Esas dos se calculan aparte, más abajo.</p>
+
+
+    <h3>Cuánto vale retener pacientes</h3>
+    <p>El paciente ambulatorio con cobertura cambia de prestador sin costo, y la espera es una causa documentada de ese cambio: en el informe anual de tiempos de espera de Vitals, <a href="https://www.fiercehealthcare.com/practices/ppatients-switched-doctors-long-wait-times-vitals">uno de cada cinco pacientes declara haber cambiado de médico por la espera</a> y tres de cada diez haberse retirado de un turno sin atenderse. Es un dato de Estados Unidos: sirve para saber que el efecto existe y de qué tamaño es; no entra en el cálculo.</p>
+
+    <p>La cuenta es: pacientes activos de la red, por el porcentaje de ellos que la espera más corta retiene cada año, por el valor de cada paciente retenido. Ese valor tiene dos partes: el margen que deja por año y el CAC (costo de adquisición de un paciente nuevo: publicidad, comisiones a portales de turnos, convenios) que la clínica se ahorra de gastar en reemplazarlo.</p>
+    <div class="destaque">
+      <p><strong>Beneficio anual = pacientes activos de la red × % de pacientes retenidos por año × (margen anual por paciente + CAC)</strong></p>
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Valor</th><th>Origen</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Pacientes de la red</td>
+            <td>161.000 por año</td>
+            <td>Derivado: 1.220 turnos diarios por 22 días por 12 meses son 322.000 turnos anuales; a 2 consultas por paciente y año (supuesto), 161.000 pacientes.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Lo que deja cada paciente por año</td>
+            <td>USD 20</td>
+            <td>2 consultas por año por USD 10 que quedan de cada una.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">CAC (costo de adquisición de un paciente nuevo)</td>
+            <td>USD 60</td>
+            <td>Es una aproximación. No hay dato argentino publicado; en Estados Unidos captar un paciente nuevo en atención primaria cuesta <a href="https://www.medesk.net/en/blog/patient-acquisition-cost-benchmarks/">entre USD 75 y 350</a> (2026), es decir, entre una y dos veces lo que allá factura una consulta. Con la misma relación sobre los USD 33 de acá, USD 60. La red tiene el dato real: lo que gastó en el año en captar pacientes (publicidad, comisiones a portales de turnos, convenios) dividido por los pacientes nuevos que entraron.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">% de pacientes retenidos por año</td>
+            <td><strong>Dato faltante</strong></td>
+            <td>Requiere la tasa de abandono anual de la red (pacientes activos que no vuelven) y la parte atribuible a la espera; el módulo la mide con la métrica de pacientes que vuelven. Sensibilidad con 1%, 1,5% y 2% de los pacientes activos.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <caption>Ejemplo con tres casos. Cada paciente retenido vale USD 80: USD 20 de margen anual más USD 60 de CAC. No se suma al retorno de la sección siguiente.</caption>
+        <thead><tr><th>Pacientes retenidos por año (% de los activos)</th><th class="num">Pacientes retenidos por año</th><th class="num">Beneficio anual</th></tr></thead>
+        <tbody>
+          <tr><td>1%</td><td class="num">1.610</td><td class="num">USD 129.000</td></tr>
+          <tr class="destacada"><td class="rotulo">1,5%</td><td class="num">2.415</td><td class="num">USD 193.000</td></tr>
+          <tr><td>2%</td><td class="num">3.220</td><td class="num">USD 258.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>El LTV de un paciente retenido es mayor que un año de margen.</strong> Los USD 80 cuentan un solo año: USD 20 de margen más USD 60 de CAC. Pero un paciente que no se va sigue atendiéndose varios años; su LTV (valor durante toda su permanencia) es el margen anual por los años que se queda, más el CAC evitado. La permanencia media es un dato de la red que el módulo mide año a año con "pacientes que vuelven"; hasta tenerlo, el ejemplo usa un año como piso.</p>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Permanencia del paciente</th><th class="num">LTV por paciente retenido</th><th class="num">Beneficio anual reteniendo el 1,5%</th></tr></thead>
+        <tbody>
+          <tr><td>1 año (piso, el ejemplo de arriba)</td><td class="num">USD 80</td><td class="num">USD 193.000</td></tr>
+          <tr><td>3 años</td><td class="num">USD 120</td><td class="num">USD 290.000</td></tr>
+          <tr><td>5 años</td><td class="num">USD 160</td><td class="num">USD 386.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Con el escenario intermedio, la retención agrega un beneficio mayor que el directo (USD 193.000 contra 106.000), y más todavía si la permanencia supera el año. La institución dispone del dato para calcularlo con precisión: cuántos pacientes dejaron de atenderse en la red en el último año y, en la encuesta de la fase 0, qué proporción menciona la espera como motivo.</p>
+
+    <h3>Oferta económica de referencia</h3>
+    <p>Lo que paga la institución. Precios de referencia para la red de ocho sedes; los definitivos se ajustan a las condiciones del pliego.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Concepto</th><th>Alcance</th><th class="num">Importe</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Implantación</td>
+            <td>Única vez. Fases 0 a 3: línea de base, configuración del módulo, integración por HL7 y FHIR con los sistemas de la red, capacitación de los ocho equipos y despliegue por olas.</td>
+            <td class="num">USD 25.000</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Licencia del módulo</td>
+            <td>Por sede y mes. Incluye cómputo, base de datos, respaldos, monitoreo, soporte y actualizaciones del módulo.</td>
+            <td class="num">USD 500 por sede<span class="nota-fila">USD 4.000 por mes para las ocho sedes; USD 48.000 por año</span></td>
+          </tr>
+          <tr>
+            <td class="rotulo">Mensajería al paciente</td>
+            <td>A costo, sin margen. Dos mensajes de WhatsApp por turno (recordatorio y pedido de confirmación), 55.000 por mes, a USD 0,04 cada uno con la tarifa de Meta y el proveedor incluidos. El detalle está en el Anexo.</td>
+            <td class="num">USD 2.200 por mes<span class="nota-fila">USD 26.400 por año, variable con el volumen</span></td>
+          </tr>
+          <tr>
+            <td class="rotulo">Pantallas de sala</td>
+            <td>Única vez. Televisor y reproductor en cada una de las ocho sedes.</td>
+            <td class="num">USD 3.300</td>
+          </tr>
+          <tr class="destacada">
+            <td class="rotulo">Total primer año</td>
+            <td></td>
+            <td class="num"><strong>USD 102.700</strong></td>
+          </tr>
+          <tr class="destacada">
+            <td class="rotulo">Total años siguientes</td>
+            <td></td>
+            <td class="num"><strong>USD 74.400 por año</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <p><strong>Comparación de precio con la oferta del mercado.</strong> Las agendas con recordatorios se contratan en Argentina entre ARS 12.900 y 42.000 por cuenta y mes (USD 9 a 28), con 60 a 250 recordatorios incluidos y la mensajería adicional aparte, según los planes publicados por Turnito y SimpleTurno a agosto de 2026. Para ocho sedes, con una cuenta por profesional, representan entre USD 100 y 1.200 mensuales, más la mensajería que exceda los recordatorios incluidos. Esta propuesta cuesta USD 6.200 mensuales (USD 4.000 de licencia y USD 2.200 de mensajería a costo, 55.000 mensajes por mes). Es de otro orden porque cubre otra cosa: la gestión de la sala en tiempo real, la reasignación entre consultorios y el ajuste de la agenda, que ninguno de esos productos incluye. Una agenda con recordatorios cubre solo la confirmación y, aplicada sola, sin ajustar la agenda, la simulación muestra que la espera empeora de 36 a 51 minutos. La comparación relevante es entre el resultado que deja cada opción, no entre el precio de herramientas de alcance distinto.</p>
+
+    <h3>Retorno para la institución</h3>
+    <div class="tabla-wrap">
+      <table>
+        <caption>A la clínica le queda el 30% de cada consulta (USD 10) y paga la oferta de referencia. La retención toma un 1,5% de pacientes que dejan de irse por año, a USD 80 cada uno.</caption>
+        <thead><tr><th>Concepto</th><th class="num">Año 1</th><th class="num">Año 2 en adelante</th></tr></thead>
+        <tbody>
+          <tr><td>Consultas adicionales: turnos liberados que se vuelven a dar</td><td class="num">USD 106.000</td><td class="num">USD 106.000</td></tr>
+          <tr><td>Consultas que cuesta la primera consulta más larga (fase 3)</td><td class="num">USD −129.000</td><td class="num">USD −129.000</td></tr>
+          <tr><td>Retención de pacientes, tomando un 1,5%</td><td class="num">USD 193.000</td><td class="num">USD 193.000</td></tr>
+          <tr><td>Implantación y pantallas</td><td class="num">USD −28.300</td><td class="num"></td></tr>
+          <tr><td>Licencia y mensajería</td><td class="num">USD −74.400</td><td class="num">USD −74.400</td></tr>
+          <tr class="destacada"><td class="rotulo">Resultado neto</td><td class="num"><strong>USD 67.300</strong></td><td class="num"><strong>USD 95.600</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cifras">
+      <div class="cifra"><span class="n">66%</span><span class="r">de retorno el primer año: lo que gana la clínica sobre lo que paga</span></div>
+      <div class="cifra"><span class="n">4 meses</span><span class="r">para recuperar la implantación y las pantallas con lo que queda después de pagar la licencia</span></div>
+      <div class="cifra"><span class="n">2,3 a 1</span><span class="r">gana la clínica por cada dólar que paga desde el segundo año</span></div>
+    </div>
+
+
+    <p>Sin contar la retención, las consultas adicionales (USD 106.000) no cubren lo que cuesta la primera consulta más larga (USD 129.000): la fase 3 se justifica por los pacientes que retiene, y por eso la fase 0 mide cuántos pacientes deja de ver la red y por qué. Si en esta red la clínica se queda con menos del 30% de cada consulta, o retiene menos del 1,5%, el retorno baja en proporción; son el segundo y el octavo dato de la lista de información requerida.</p>
+
+    <p>Los plazos se cuentan desde el inicio del proyecto, aunque el beneficio empieza recién con la fase 2. La retención de pacientes y el tiempo médico recuperado no están en la cuenta, y juegan a favor.</p>
+
+    <h3>Modelo de contratación y ajuste entre fases</h3>
+    <p>La oferta económica es de precio fijo por licencia, que es lo habitual en una licitación. Lo que se propone distinto es que el plan no sea rígido: cada fase cierra con una revisión conjunta de lo medido, y lo que se observe en la práctica puede modificar la siguiente.</p>
+    <ul class="limpia">
+      <li><strong>La fase 0 ajusta la fase 1:</strong> qué consultorios forman pool en cada sede, los umbrales de alerta y la ganancia mínima para proponer un movimiento salen de la medición, no de valores por defecto.</li>
+      <li><strong>La fase 1 ajusta la fase 2:</strong> cuánto se deja de sobreagendar y en qué sedes depende de la tasa de ausencia que se mida con la confirmación activa, no de la del brief.</li>
+      <li><strong>La fase 2 decide si hace falta una fase 3:</strong> solo si la brecha entre turno agendado y duración real se confirma con datos propios se pone sobre la mesa el ajuste del turno, con su costo de volumen cuantificado.</li>
+    </ul>
+    <p>Los criterios de salida de cada fase, medidos contra la línea de base, son el insumo de esa revisión: sirven para decidir qué se cambia, no para condicionar un pago. Si un supuesto del modelo no se sostiene en la práctica, se recalcula el caso con el dato real antes de avanzar.</p>
+
+    <h3>Por qué la primera consulta más larga está en el alcance</h3>
+    <p>Agendar la primera consulta a 1,5 veces el turno de un control lleva la espera de 38 a 25 minutos y el percentil 90 de 84 a 60, a costa de 49 consultas diarias; con USD 10 por consulta, <strong>USD 10.800 mensuales</strong> menos de resultado neto. Alargar todos los turnos un 15% la lleva a 20 minutos, a costa de 89 consultas y USD 19.600 mensuales. Son las dos únicas medidas que cuestan consultas. La primera consulta más larga está en el alcance como fase 3 porque con lo que retiene se paga sola; alargar todos los turnos queda como decisión de la institución.</p>
+    <p><strong>Contra qué se compara ese costo.</strong> Las 49 consultas diarias son USD 130.000 al año de resultado neto. Del otro lado está lo que la espera más corta retiene: pasar de 38 a 25 minutos sube del 37% al 49% la proporción de pacientes atendidos dentro de los 15 minutos, que es el umbral donde la literatura ubica el quiebre de satisfacción, y baja el peor caso (P90) de 84 a 60. Con la fórmula de retención de arriba (USD 80 por paciente retenido), la primera consulta más larga se paga sola si retiene <strong>un 1% más de los pacientes activos por año</strong> (1.610 pacientes, USD 129.000); con 0,5% cubre la mitad; con 1,5% la supera.</p>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Pacientes retenidos de más por bajar de 38 a 25 min (% de los activos)</th><th class="num">Pacientes retenidos por año</th><th class="num">Beneficio anual</th><th>Contra USD 130.000 de volumen</th></tr></thead>
+        <tbody>
+          <tr><td class="num">0,5%</td><td class="num">805</td><td class="num">USD 64.000</td><td>cubre la mitad</td></tr>
+          <tr><td class="num">1%</td><td class="num">1.610</td><td class="num">USD 129.000</td><td>empata</td></tr>
+          <tr><td class="num">1,5%</td><td class="num">2.415</td><td class="num">USD 193.000</td><td>lo supera</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Las 49 consultas y los 25 minutos dependen de un supuesto sin fuente local: que el 17% de los turnos sean primeras consultas. Con 10% el escenario da 28,7 minutos y cuesta 20 consultas; con 28%, la proporción del sistema público español, 19,3 minutos y 77 consultas; con 37%, la del Hospital General de México, 16,9 minutos y 104 consultas (ver Supuestos, en el Anexo). Un punto y medio está dentro de los órdenes de magnitud de la literatura (uno de cada cinco pacientes cambió de médico por la espera), pero no está demostrado para esta red, y depende de los USD 60 por paciente nuevo, que son una aproximación. Por eso la fase 0 mide las dos cosas: la brecha real entre turno y consulta, y la proporción de pacientes que vuelven a la red, antes y después, y con eso se fija el multiplicador de la primera consulta y se sigue el resultado.</p>
+
+  </section>
+
+  </div>
+
+  <div class="pestana" id="tab-anexo">
+
+  <div class="indice">
+    <p class="eyebrow" style="margin-bottom:0.75rem">Contenido</p>
+    <ol>
+      <li>Supuestos</li>
+      <li>Metodología de estimación y resultados</li>
+      <li>Evidencia complementaria e información requerida</li>
+      <li>Mensajería al paciente: qué es y de dónde sale el costo</li>
+      <li>El módulo como producto: caso para Intuit Salud</li>
+    </ol>
+  </div>
+
+  <section class="seccion">
+    <h2>Supuestos</h2>
+    <p>El relevamiento inicial aporta tres cifras: 45 minutos de espera, 30% de ausencias y 8 sedes. El resto de los parámetros se asumió. Cada supuesto indica el fundamento del valor adoptado y el efecto sobre las conclusiones si el valor real difiere.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Supuesto</th><th>Valor</th><th>Fundamento</th><th>Sensibilidad</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">País de operación</td>
+            <td>Argentina</td>
+            <td>La información inicial menciona HIPAA pero describe una operación (agenda telefónica, planillas compartidas, red de clínicas ambulatorias) sin otras señales geográficas. Se declara como supuesto y la solución se diseña contra el estándar más exigente de los dos marcos posibles.</td>
+            <td>Cambia las leyes que se citan y la escala de los números en dólares. No cambia la arquitectura ni las decisiones de minimización de datos, que ya cumplen HIPAA.</td>
+          </tr>
+          
+          <tr>
+            <td class="rotulo">Causas de la ausencia</td>
+            <td>Olvido como causa principal, cerca del 44%</td>
+            <td>Giunta et al. lo relevan por autorreporte en Argentina: olvido 44%, imprevistos 15%, malestar 12%. Es consistente con la <a href="https://bjgp.org/content/71/707/e406">revisión sistemática del British Journal of General Practice</a>, que ubica al olvido entre las tres causas principales, y con la <a href="https://www.ncbi.nlm.nih.gov/books/NBK260108/">síntesis TURNUP</a>, donde explica entre el 45% y el 82% de los ausentes según el estudio. El 44% local se ubica en el extremo inferior de ese rango.</td>
+            <td>Un recordatorio resuelve un olvido, no una dificultad de transporte. Si en esta red el olvido tuviera un peso considerablemente menor, la confirmación rendiría menos y la fase 2 se orientaría a facilitar la reprogramación. Se releva en la fase 0.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Efectividad de la confirmación</td>
+            <td>35% de reducción del ausentismo</td>
+            <td>El valor más bajo que mide la <a href="http://sedici.unlp.edu.ar/bitstream/handle/10915/57981/Documento_completo.pdf?sequence=1">literatura académica local</a> y de la <a href="https://www.ospat.com.ar/blog/realmente-sirven-los-mensajes-recordatorios-de-turnos-medicos/">evidencia recopilada por OSPAT</a>. Los proveedores comerciales publican 50% a 80%, sin revisión independiente, y no se incorporaron. El valor es coherente con que el olvido, la causa sobre la que actúa, represente cerca del 44%.</td>
+            <td>Si el efecto real es mayor, el caso mejora. Si la cartera es mayoritariamente adulta mayor con baja penetración digital, puede resultar inferior; por ese motivo el canal es múltiple y se releva en el piloto.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Duración agendada del turno</td>
+            <td>15 a 30 min según especialidad; <strong>20 min de promedio</strong> ponderado por volumen</td>
+            <td><a href="https://infomed.com.ar/consulta-medica-cuanto-dura-en-promedio/">Media ambulatoria argentina en torno a 15 minutos</a>; los nomencladores toman 20 como referencia operativa. Se modelaron 15 (clínica, dermatología), 20 (traumatología, pediatría, oftalmología), 25 (ginecología, endocrinología) y 30 (cardiología).</td>
+            <td>Cambia la capacidad instalada calculada, no la lógica de las intervenciones.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Cuánto excede la consulta real a su turno</td>
+            <td>1,5 veces: <strong>31 min reales</strong> contra 20 agendados, en promedio</td>
+            <td>Es el único parámetro calibrado: se ajustó hasta que el modelo reprodujera los 45 minutos informados (con 64 réplicas por escenario, la intensidad de sobrecarga del modelo quedó en 1,66; la duración real media sigue siendo de 31 minutos por turno de 20). El valor resultante se ubica en el extremo inferior del rango de 1,5 a 2 que implica la <a href="https://www.lanacion.com.ar/sociedad/crisis-sanitaria-mas-de-30-asociaciones-medicas-avalan-la-aplicacion-de-un-honorario-minimo-federal-nid21092023/">encuesta de la Sociedad Argentina de Cardiología</a>, según la cual al 70% de los profesionales se le requieren turnos de 10 a 15 minutos cuando consideran necesarios entre 20 y 30. Que el dato de la institución y una fuente gremial independiente coincidan es la mejor confirmación que tiene el análisis.</td>
+            <td>Si la brecha real es mayor, la cuarta intervención tiene más valor y mayor costo de volumen. Si es menor, no corresponde aplicarla. Se mide en la fase 0 comparando duración agendada y duración real.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Proporción de primeras consultas y cuánto más duran</td>
+            <td>17% de los turnos; duran 1,35 veces la media, los controles 0,93</td>
+            <td>En consultorios médicos ambulatorios de Estados Unidos, la encuesta nacional <a href="https://www.cdc.gov/nchs/data/ahcd/namcs_summary/2019-namcs-web-tables-508.pdf">NAMCS 2019</a> mide que los pacientes nuevos son el 16,8% de las visitas (12,5% en atención primaria, alrededor de 21% en especialidades): es el entorno más parecido a esta red y coincide con el valor adoptado. En sistemas hospitalarios con derivación es mayor: 28,1% en la atención especializada del <a href="https://www.sanidad.gob.es/estadEstudios/sanidadDatos/tablas/tabla25.htm">Sistema Nacional de Salud español</a> (2024) y 37% en el <a href="https://hgm.salud.gob.mx/interna/dirgral/descargas/Infor-Ene-Mar-2025_01-07-25.pdf">Hospital General de México</a> (2025). Sin dato argentino publicado. Los dos factores de duración se eligieron para que el promedio no cambie: el supuesto reparte distinto el tiempo entre consultas, no agrega tiempo. En Argentina el registro de consultorio externo distingue "primera vez" y "ulterior", así que la institución tiene el dato.</td>
+            <td>Solo afecta el escenario de la primera consulta más larga; el resto no cambia porque la duración media se conserva. Medido: con 10% de primeras consultas ese escenario da 28,7 minutos y cuesta 20 turnos diarios; con 17%, 25,3 y 49; con 28% (proporción española), 19,3 y 77; con 37% (mexicana), 16,9 y 104. Cuantas más primeras consultas, más vale y más cuesta. Se mide en la fase 0 por especialidad.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Cuánto se sobreagenda hoy</td>
+            <td>10%: la agenda ofrece 1,10 minutos de turno por minuto de consultorio disponible (1.220 turnos ofrecidos contra 1.100 que entrarían al turno nominal)</td>
+            <td>Sin dato de la red. Se deduce del brief: 30% de ausencias, tiempos muertos y 45 minutos de espera solo conviven si se sobreagenda para cubrirse. En el modelo el paso entre turnos se acorta para cubrir un 35% de la tasa de ausencia (turnos cada 18 minutos en vez de cada 20).</td>
+            <td>Define cuántos turnos se dejan de ofrecer en la fase 2 (1.220 → 1.110, 1,01 minutos de turno por minuto disponible) y cuánto se protege la ganancia de la fase 1. Rango plausible 5% a 20%. Se mide en la fase 0 con la agenda tal como está armada y el módulo lo sigue de forma continua.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Horario de atención</td>
+            <td>8 a 18, corrido</td>
+            <td>No consta en la información inicial. Se adoptó la jornada habitual de consultorios externos en centros ambulatorios privados de Buenos Aires, de diez horas corridas. Una jornada más extensa o partida modifica la forma de la curva de espera, no su mecanismo.</td>
+            <td>Con jornada partida (mañana y tarde con corte), la cascada se reinicia parcialmente al mediodía y la espera acumulada de la tarde parte de un valor menor. El pico se reduce; el orden de las intervenciones no cambia. Se confirma en la primera semana de la fase 0.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Volumen y capacidad</td>
+            <td>4 a 6 consultorios por sede, 42 en la red; 1.220 turnos ofrecidos por día</td>
+            <td>La información inicial habla de ocho clínicas ambulatorias, no de consultorios individuales, y atribuye los tiempos muertos a mala distribución de turnos, lo que requiere más de un consultorio por especialidad. Se asumieron 2 a 3 especialidades principales por sede con al menos dos consultorios cada una, es decir 4 a 6 consultorios por sede. El volumen se deriva de ahí: 42 consultorios, jornada de 10 horas, turno promedio de 20 minutos y ocupación cercana al máximo dan 29 turnos por consultorio y 1.220 por día en la red. Ese régimen, congestionado pero estable, es el que reproduce los 45 minutos informados; con más carga la cola crecería sin límite.</td>
+            <td>Si la red tiene más consultorios, todo escala en proporción; el porcentaje de mejora depende de la congestión, no del tamaño. Se releva en la primera semana de la fase 0 junto con la composición por especialidad.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Consultorios de la misma especialidad en una sede</td>
+            <td>Al menos dos por especialidad principal</td>
+            <td>Se infiere de la propia información inicial. Los tiempos muertos se atribuyen a mala distribución de turnos, y solo existe algo que distribuir cuando varios consultorios atienden la misma especialidad: no es posible redistribuir entre un cardiólogo y un dermatólogo. Dos razones más apuntan en la misma dirección. Una cadena de ocho clínicas con una dirección de operaciones común tiende a ofrecer las mismas especialidades en todas sus sedes, no una oferta distinta en cada una. Y un centro con solo 4 a 6 consultorios no puede dedicar uno a cada una de seis especialidades distintas y mantenerlos ocupados: concentra sus consultorios en las dos o tres especialidades de mayor demanda (clínica médica, pediatría, ginecología) y asigna dos o más a cada una.</td>
+            <td>Es el supuesto que más condiciona la fase 1. Se verifica en la primera semana de la fase 0, antes de comprometer resultados. Si una sede no dispone de consultorios pares, la fase 1 no aplica en esa sede y el valor proviene de las fases 0 y 2.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Demanda para los turnos que se liberan</td>
+            <td>Hay pacientes para ocupar los turnos que se liberan con aviso: la agenda se llena con anticipación y se puede agendar de antemano, con una sobreagenda chica y medida, lo que se sabe que se libera</td>
+            <td>La demanda ambulatoria en Argentina se encuentra sistémicamente insatisfecha: <a href="https://misionesonline.net/2026/04/20/pami-comra-afiliados-crisis/">COMRA reporta turnos a tres meses</a> y <a href="https://www.lanacion.com.ar/comunidad/esperan-meses-por-un-turno-o-no-se-atienden-como-se-resintio-la-atencion-de-la-salud-en-el-sistema-nid07102024/">hay pacientes que esperan meses o dejan de atenderse</a>. Una red que compite en ese mercado no presenta capacidad ociosa por falta de pacientes.</td>
+            <td>Condiciona una sola línea del caso de negocio: si los turnos liberados con aviso se vuelven a ocupar. El resto (espera, ausentismo, uso de la agenda, tiempo médico) no depende de este supuesto.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <h2>Metodología de estimación y resultados</h2>
+    <p class="lede">Con los supuestos anteriores se construyó una simulación de la jornada completa de las ocho sedes, minuto a minuto. Todas las cifras que siguen provienen de ella.</p>
+
+    <h3>Descripción</h3>
+    <p>Un simulador que genera la agenda de cada consultorio, las llegadas de los pacientes, la duración real de cada consulta y las ausencias, y hace avanzar el reloj de 8 a 18 aplicando las reglas de atención que se quieren evaluar: qué paciente pasa cuando se libera un consultorio (solo uno de su propia cola, o el de mayor espera entre todos los de la especialidad), cuánto se sobreagenda y si hay confirmación previa. Modificando esas reglas y manteniendo constante todo lo demás se mide el efecto de cada intervención.</p>
+
+    <h3>Calibración</h3>
+    <p>Un solo parámetro se ajustó contra la información inicial: cuánto excede la consulta real al turno agendado. Se modificó hasta que la espera media del modelo reprodujera los 45 minutos informados. El resto de los supuestos son los de la sección anterior. Con esa calibración el modelo arroja <strong>45 minutos de espera media y 32% de ausencias</strong>, en línea con lo reportado por la institución.</p>
+
+    <h3>Comparación de escenarios</h3>
+    <p>Como cambiar la agenda cambia también qué pacientes vienen y cuándo, cada escenario se corre 64 veces con pacientes distintos y se informa el promedio; con una sola corrida no se distingue el efecto de la regla del azar de esa jornada. Una versión anterior del análisis usaba 8 réplicas, y con esa cantidad el error del promedio era del mismo orden que la diferencia entre escenarios cercanos: por eso se subió a 64. Si cambia un supuesto, se vuelve a correr y los resultados se actualizan.</p>
+    <h3>Por qué el motor pide 12 minutos de ganancia para proponer un cambio</h3>
+    <p>El mismo simulador se usó para fijar el mínimo con el que el motor propone cambiar a un paciente de lista (ver reglas del motor en la sección de prototipo). Se probaron mínimos de 3 a 40 minutos sobre cuatro jornadas, consultando al motor cada media hora en cada sede. En la mitad de los casos la hora que el motor estima se aparta 12 minutos de la real. Con un mínimo de 8, el 14% de los cambios propuestos prometía menos que eso, cambios que el paciente puede no notar; con 12, ninguno. Y no se pierden minutos: con 12 se ahorran 7% más que con 8, porque cada cambio chico ocupa un lugar en la lista del otro consultorio que después no queda libre para un cambio grande. Lo que se resigna es cantidad: con 12 se ayuda a 9 de cada 10 pacientes que se ayudaría con 8; con 20 o 25 se suman minutos pero un tercio de los pacientes se queda sin beneficio. Por eso el valor por defecto es 12, y se ajusta por sede con los datos de la fase 0.</p>
+
+    <h3>Capacidad ociosa con sala llena</h3>
+    <p>La simulación confirma la lectura del punto de partida: existe consultorio libre con pacientes esperando en la misma sede durante el 10% del tiempo, 43 horas diarias en el conjunto de la red. No todas se recuperan igual. 21 horas son consultorio libre con alguien de la <strong>misma especialidad</strong> esperando: esa es la capacidad que la reasignación recupera, y con la fase 1 baja a cero. Las otras 22 son un consultorio libre mientras esperan pacientes de otra especialidad (un cardiólogo libre y gente de dermatología en la sala): no se recuperan moviendo pacientes, sino planificando la agenda entre especialidades, y por eso el módulo las mide aparte. Con las fases 1 y 2 quedan 24 horas de este segundo tipo; con la primera consulta más larga, 33, porque la agenda queda menos densa.</p>
+
+    <h3>El retraso se acumula a lo largo de la jornada</h3>
+    <figure>
+      <svg viewBox="0 0 740 290" role="img" aria-label="Curva de espera media a lo largo de la jornada. Hoy comienza en 6 minutos a las 8, llega a 54 a las 13, baja a 41 a las 14 y alcanza 80 a las 18. Con las fases 1 y 2 se mantiene por debajo toda la jornada y termina en 75. Con la fase 3 termina en 54.">
+        <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="var(--ink-faint)">
+          <line x1="72" y1="20" x2="720" y2="20" stroke="var(--rule)"/>
+          <line x1="72" y1="76" x2="720" y2="76" stroke="var(--rule)"/>
+          <line x1="72" y1="132" x2="720" y2="132" stroke="var(--rule)"/>
+          <line x1="72" y1="188" x2="720" y2="188" stroke="var(--rule)"/>
+          <line x1="72" y1="20" x2="72" y2="212" stroke="var(--ink-soft)" stroke-width="1.5"/>
+          <line x1="72" y1="212" x2="720" y2="212" stroke="var(--ink-soft)" stroke-width="1.5"/>
+          <text x="64" y="24" text-anchor="end">80</text>
+          <text x="64" y="80" text-anchor="end">60</text>
+          <text x="64" y="136" text-anchor="end">40</text>
+          <text x="64" y="192" text-anchor="end">20</text>
+          <text x="64" y="216" text-anchor="end">0</text>
+          <text x="72" y="232" text-anchor="middle">08:00</text>
+          <text x="202" y="232" text-anchor="middle">10:00</text>
+          <text x="331" y="232" text-anchor="middle">12:00</text>
+          <text x="461" y="232" text-anchor="middle">14:00</text>
+          <text x="590" y="232" text-anchor="middle">16:00</text>
+          <text x="720" y="232" text-anchor="middle">18:00</text>
+          <line x1="72" y1="212" x2="72" y2="217" stroke="var(--ink-soft)"/>
+          <line x1="202" y1="212" x2="202" y2="217" stroke="var(--ink-soft)"/>
+          <line x1="331" y1="212" x2="331" y2="217" stroke="var(--ink-soft)"/>
+          <line x1="461" y1="212" x2="461" y2="217" stroke="var(--ink-soft)"/>
+          <line x1="590" y1="212" x2="590" y2="217" stroke="var(--ink-soft)"/>
+          <line x1="720" y1="212" x2="720" y2="217" stroke="var(--ink-soft)"/>
+        </g>
+        <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600" fill="var(--ink-soft)">
+          <text x="396" y="258" text-anchor="middle">Hora del día</text>
+          <text x="16" y="116" text-anchor="middle" transform="rotate(-90 16 116)">Espera media, minutos</text>
+        </g>
+        <polyline points="72,202 137,171 202,148 266,132 331,111 396,86 461,117 526,111 590,97 655,82 720,25"
+                  fill="none" stroke="var(--bad)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="72,204 137,177 202,156 266,138 331,121 396,103 461,134 526,127 590,114 655,100 720,36"
+                  fill="none" stroke="var(--warn)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="72,205 137,186 202,171 266,157 331,147 396,136 461,165 526,159 590,150 655,138 720,87"
+                  fill="none" stroke="var(--good)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="720" cy="25" r="4" fill="var(--bad)"/><circle cx="720" cy="36" r="4" fill="var(--warn)"/><circle cx="720" cy="87" r="4" fill="var(--good)"/>
+        <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" font-weight="600">
+          <text x="600" y="70" fill="var(--bad)">Hoy</text>
+          <text x="560" y="128" fill="var(--warn)">Fases 1 y 2</text>
+          <text x="470" y="180" fill="var(--good)">Con la fase 3</text>
+        </g>
+      </svg>
+      <figcaption>Espera media, en minutos, de los pacientes atendidos en cada hora de la jornada. Eje horizontal: hora del día, de 8 a 18. Eje vertical: minutos de espera. "Fases 1 y 2" es reasignación, confirmación y agenda ajustada; "Con la fase 3" suma la primera consulta más larga, la propuesta completa. Promedio de 64 réplicas.</figcaption>
+    </figure>
+    <p>A las 8 la agenda opera casi en horario. Cada hora hereda el retraso de la anterior y la jornada no se recupera: la última consulta comienza después de las 20. Frenar el atraso antes del mediodía es mucho más barato que agregar consultorios para el pico de las 17.</p>
+
+
+<h3>Resultado por intervención</h3>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Cada fila se acumula sobre la anterior. La duración real de la consulta se mantiene igual en todos los escenarios: ninguna intervención supone que el profesional atienda más rápido. "Turnos ofrecidos" es lo que hay en la agenda; "consultas atendidas" es lo que efectivamente ocurre después de descontar los turnos perdidos sin aviso y los liberados con aviso. Hoy, de 1.220 turnos ofrecidos, 368 se pierden sin aviso y 60 se liberan con aviso: se atienden 786. Promedio de 64 réplicas por escenario.</caption>
+        <thead><tr><th>Escenario acumulado</th><th class="num">Espera media</th><th class="num">Percentil 90</th><th class="num">Turnos ofrecidos por día</th><th class="num">Consultas atendidas por día</th></tr></thead>
+        <tbody>
+          <tr><td class="rotulo">Hoy</td><td class="num">45 min</td><td class="num">106 min</td><td class="num">1.220</td><td class="num">786</td></tr>
+          <tr><td>Con reasignación<span class="nota-fila">Fase 1</span></td><td class="num">36 min</td><td class="num">82 min</td><td class="num">1.220</td><td class="num">790</td></tr>
+          <tr class="destacada"><td class="rotulo">Con confirmación y agenda ajustada<span class="nota-fila">Fase 2, conservando el volumen</span></td><td class="num">38 min</td><td class="num">84 min</td><td class="num">1.110</td><td class="num">793</td></tr>
+          <tr><td>Con la primera consulta agendada a 1,5 veces el turno<span class="nota-fila">Fase 3</span></td><td class="num">25 min</td><td class="num">60 min</td><td class="num">1.038</td><td class="num delta neg">744 (−6%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <caption>Otras modalidades tenidas en cuenta y no propuestas. Cada una se calcula sobre la fase 2 (38 minutos). Cuestan más consultas por minuto ganado que la primera consulta más larga.</caption>
+        <thead><tr><th>Modalidad</th><th class="num">Espera media</th><th class="num">Percentil 90</th><th class="num">Turnos ofrecidos por día</th><th class="num">Consultas atendidas por día</th></tr></thead>
+        <tbody>
+          <tr><td>Sin ninguna sobreagenda</td><td class="num">31 min</td><td class="num">72 min</td><td class="num">1.073</td><td class="num delta neg">765 (−3,5%)</td></tr>
+          <tr><td>Sin sobreagenda y con la primera consulta más larga</td><td class="num">21 min</td><td class="num">50 min</td><td class="num">1.011</td><td class="num delta neg">723 (−9%)</td></tr>
+          <tr><td>Con todos los turnos alargados un 15%</td><td class="num">20 min</td><td class="num">50 min</td><td class="num">987</td><td class="num delta neg">704 (−11%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Las fases 1 y 2 no cuestan turnos: la diferencia de 7 consultas diarias entre hoy y la fase 2 no se distingue del error del modelo. La fase 1 baja la espera de 45 a 36. La fase 2 no la baja más (38, dentro del error), pero baja las ausencias sin aviso de 32% a 21% conservando el volumen: el sobreagendamiento no agrega capacidad real, agrega turnos que en un tercio de los casos nadie ocupa, y al reducirse el ausentismo el uso efectivo de la agenda asciende de 64% a 71% y compensa los turnos que se dejan de ofrecer. Bajar de ahí sí cuesta turnos. La fase 3, alargar solo la primera consulta, cuesta 49 consultas diarias y gana 13 minutos, y se paga con los pacientes que retiene. Las otras modalidades de la segunda tabla rinden menos por consulta resignada: dejar de sobreagendar por completo cuesta 28 y gana 7; las dos juntas cuestan 70 y ganan 17; alargar todos los turnos cuesta 89 y gana 18.</p>
+  </section>
+
+  <section class="seccion">
+    <h2>Evidencia complementaria e información requerida</h2>
+
+    <h3>Evidencia en sentido contrario</h3>
+    <p>El <a href="https://rasp.msal.gov.ar/rasp/articulos/vol13/AO_GarciaMunitis44.pdf">estudio del Hospital El Cruce</a> (423 encuestas, consulta externa) midió el tiempo de espera como predictor de satisfacción y no halló asociación significativa. Tres razones explican por qué no resulta trasladable a este caso: efecto techo, con mediana de 10 sobre 10 y sin varianza que explicar; población de un hospital público de alta complejidad sin alternativa de derivación, que califica alto con independencia de la espera; y medición de satisfacción global en lugar de satisfacción con la espera. Existen trabajos que reportan 95% de satisfacción global junto a 26% de insatisfacción específica con el tiempo de espera en la misma muestra. Por ese motivo el instrumento de la fase 0 pregunta por la espera en particular.</p>
+
+    <h3>Explorado y descartado en la primera versión</h3>
+    <p><strong>Geolocalización del paciente</strong> para anticipar llegadas y ausencias. Se descartó porque lo que aporta no justifica el costo en privacidad: la confirmación proactiva 45 minutos antes captura la mayor parte del beneficio sin datos de ubicación. Queda como opción para fases posteriores, únicamente con adhesión voluntaria del paciente y un marco de consentimiento robusto.</p>
+
+    <h3>Información requerida de la institución</h3>
+    <ul class="limpia">
+      <li>País de operación de la red.</li>
+      <li>Ingreso neto por consulta ambulatoria.</li>
+      <li>Con cuánta anticipación se llena la agenda, y si hay lista de espera.</li>
+      <li>Consultorios por especialidad en cada sede.</li>
+      <li>Duración real de la consulta, de existir registro.</li>
+      <li>Edad promedio de la cartera y canal habitual de contacto.</li>
+      <li>Sistemas informáticos en uso además de las planillas compartidas.</li>
+      <li>Proporción de pacientes atendidos que vuelven a la red dentro de los 12 meses, si el registro actual permite calcularla.</li>
+      <li>Proporción de primeras consultas sobre el total, por especialidad.</li>
+      <li>Cuánto gasta la red por año en captar pacientes (publicidad, comisiones a portales de turnos, convenios) y cuántos pacientes nuevos entran por año.</li>
+      <li>Cuánto se sobreagenda hoy: turnos ofrecidos por hora contra la duración del turno, por especialidad y sede.</li>
+    </ul>
+  </section>
+
+  <section class="seccion">
+    <h2>Mensajería al paciente: qué es y de dónde sale el costo</h2>
+    <p>La mensajería son los avisos que el sistema le manda al paciente a su teléfono. Van por WhatsApp, que es el canal que la cartera ya usa; quien tenga la aplicación los recibe como notificación de la app, sin costo. Cada mensaje de WhatsApp que inicia la institución lo cobra Meta, más una comisión del proveedor que da la conexión. Cuando el paciente responde, se abre una ventana de 24 horas en la que el resto de la conversación es gratis; por eso hay mensajes que se pagan y otros que no.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <caption>Volumen para 1.220 turnos por día y 22 días por mes, 27.000 turnos mensuales. Solo se pagan los mensajes que inicia la institución fuera de una conversación abierta; los demás entran en la ventana gratuita de 24 horas que abre la respuesta del paciente.</caption>
+        <thead><tr><th>Mensaje</th><th>Cuándo</th><th class="num">Por turno</th><th class="num">Por mes</th><th>Se paga</th></tr></thead>
+        <tbody>
+          <tr><td class="rotulo">Recordatorio con el turno y el evento de calendario</td><td>Al reservar, y de nuevo 24 horas antes</td><td class="num">1</td><td class="num">27.000</td><td>Sí</td></tr>
+          <tr><td class="rotulo">Pedido de confirmación</td><td>45 minutos antes: "¿Vas a llegar?" con tres respuestas de un toque</td><td class="num">1</td><td class="num">27.000</td><td>Sí</td></tr>
+          <tr><td class="rotulo">Franja estimada de atención y aviso de demora</td><td>Cuando el consultorio se atrasa</td><td class="num">0,3</td><td class="num">8.000</td><td>No: el paciente ya respondió la confirmación y la conversación está abierta</td></tr>
+          <tr><td class="rotulo">Oferta de cambio de consultorio</td><td>Cuando el motor propone reasignarlo</td><td class="num">0,1</td><td class="num">2.700</td><td>No, misma razón</td></tr>
+          <tr><td class="rotulo">"No pudimos verte hoy, ¿qué pasó?"</td><td>Dos horas después de un turno no concurrido</td><td class="num">0,15</td><td class="num">4.000</td><td>Sí, solo a quien no respondió el pedido de confirmación (la mitad de los ausentes)</td></tr>
+          <tr class="destacada"><td class="rotulo">Mensajes pagos por mes</td><td></td><td class="num">2,15</td><td class="num"><strong>58.000</strong></td><td>Si nadie usa la aplicación. Se toman 55.000: basta con que uno de cada veinte pacientes la use</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Tarifa.</strong> Meta cobra por mensaje de plantilla entregado, con una tarifa distinta según el tipo; los avisos de turno entran en la categoría de utilidad, la más barata. Para Argentina los proveedores publican entre <a href="https://www.basework.com.ar/precios-whatsapp-business-api-argentina">USD 0,0075</a> y <a href="https://botias.io/blog/cuanto-cuesta-whatsapp-business-api-argentina-2026">USD 0,026</a> por mensaje de utilidad, según la fecha y el proveedor, más la comisión del proveedor de la API, que va de un fijo mensual a un recargo por mensaje. Se toma <strong>USD 0,04 por mensaje todo incluido</strong>, por encima de lo publicado, para no subestimar: 55.000 mensajes por USD 0,04 son <strong>USD 2.200 por mes</strong>. Si Meta vuelve a cambiar la tarifa, se traslada tal cual, porque se cobra a costo.</p>
+
+    <p><strong>App primero, WhatsApp de respaldo.</strong> La aplicación manda los mismos avisos como notificación, sin costo, y es el canal preferido. WhatsApp queda para quien no la tiene, que al principio es casi toda la cartera: no se le puede pedir a un paciente que instale una app para un turno cada cuatro meses, y la reducción de ausencias que usa el modelo viene de estudios con SMS y llamados, no con apps. Por eso no se apuesta todo a la app: el costo de mensajería es chico frente a lo que compra (con que 200 de los 27.000 turnos mensuales se recuperen gracias al aviso, se pagó) y cae solo a medida que la cartera migra. Cada mensaje de WhatsApp y cada paso por el mostrador ofrecen instalar la app; la meta es tener la mitad de la cartera en la aplicación al cabo del primer año, lo que deja la mensajería en USD 1.100 por mes.</p>
+  </section>
+
+  <section class="seccion">
+    <h2>El módulo como producto: caso para Intuit Salud</h2>
+    <p class="lede">La pestaña Negocio responde si a la red le conviene comprar. Esta sección responde una decisión previa de Intuit Salud: si el desarrollo se encara como un trabajo a medida para esta red o como un módulo de producto reutilizable del que esta red es el primer cliente. El análisis de mercado que sigue solo tiene sentido en el segundo caso.</p>
+
+    <h3>Dos formas de encarar el desarrollo</h3>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th></th><th>Desarrollo a medida</th><th>Módulo de producto</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">Qué se construye</td>
+            <td>Lo mismo, pero configurado y entregado para esta red.</td>
+            <td>Lo mismo, diseñado desde el inicio para activarse en cualquier institución: parametrizable por sede, especialidad y umbrales, integrable por HL7 y FHIR con lo que cada una tenga.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Cómo se cobra a esta red</td>
+            <td>Precio único por el desarrollo y la implantación, USD 65.000 a 75.000 (costo de USD 47.500 más margen), y soporte anual aparte. Sin licencia.</td>
+            <td>Implantación de USD 25.000 más licencia de USD 500 por sede y mes. Es la oferta económica de referencia de la sección anterior.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Qué le conviene a la red</td>
+            <td>Paga más al inicio y menos después. Recupera la inversión en menos de un año igual.</td>
+            <td>Paga menos al inicio y una licencia recurrente. Recibe mejoras continuas del módulo.</td>
+          </tr>
+          <tr>
+            <td class="rotulo">Qué le conviene a Intuit</td>
+            <td>Cobra el desarrollo una vez. El conocimiento queda, pero no el ingreso.</td>
+            <td>El 65% del esfuerzo (desarrollo y diseño) se reutiliza en cada cliente siguiente. Se abre el mercado que se dimensiona a continuación.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Se recomienda el módulo de producto</strong>, por tres razones: la mayor parte del esfuerzo es reutilizable, ningún oferente relevado cubre este segmento, y el mercado existe y se puede contar. La oferta a esta red se formuló en consecuencia. Si Intuit prefiriera el desarrollo a medida, la propuesta técnica no cambia; cambia la oferta económica y esta sección deja de aplicar.</p>
+
+    <h3>Tamaño del mercado</h3>
+    <p>El Registro Federal de Establecimientos de Salud (<a href="https://datos.salud.gob.ar/dataset/listado-establecimientos-de-salud-asentados-en-el-registro-federal-refes">REFES, corte de diciembre de 2025</a>) registra 36.047 establecimientos, de los cuales 23.186 son de financiamiento privado. Dentro de los privados, la tipología que corresponde exactamente al segmento de esta propuesta, <em>con atención médica diaria y con especialidades</em>, agrupa <strong>6.860 establecimientos</strong>. Se suman 2.122 clínicas y sanatorios privados con internación, que operan consultorios externos con la misma dinámica.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <caption>Argentina, sector privado. El mercado se mide en sedes y en cuánto podrían recuperar esas sedes por año, tomando como referencia lo que recupera cada sede de esta red: USD 13.250 anuales. Ese valor no depende de lo que cobre Intuit Salud.</caption>
+        <thead><tr><th></th><th>Definición</th><th class="num">Sedes</th><th class="num">Valor recuperable anual</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="rotulo">TAM</td>
+            <td>Establecimientos privados con consultorios de especialidades: 6.860 ambulatorios y 2.122 con internación</td>
+            <td class="num">8.982</td>
+            <td class="num">USD 119 M</td>
+          </tr>
+          <tr>
+            <td class="rotulo">SAM</td>
+            <td>Los que tienen varios consultorios de la misma especialidad, condición para que la reasignación aplique: la totalidad de los que tienen internación y un 35% de los ambulatorios, supuesto a validar con el detalle del registro</td>
+            <td class="num">4.500</td>
+            <td class="num">USD 60 M</td>
+          </tr>
+          <tr class="destacada">
+            <td class="rotulo">SOM a tres años</td>
+            <td>3% del SAM, alcanzable con la red de esta propuesta, dos pilotos por año en redes comparables y venta directa a instituciones medianas</td>
+            <td class="num">135</td>
+            <td class="num">USD 1,8 M</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Ese valor es lo que las clínicas pueden recuperar; no es lo que factura Intuit Salud. Intuit cobra la licencia: a USD 6.000 por sede y año, 135 sedes son USD 810.000 anuales. Ese es el número que se proyecta en la tabla de adopción.</p>
+
+    <p>El sector público, con 11.892 establecimientos provinciales y municipales que operan consultorios externos, no se incluye en el TAM porque compra con procesos y plazos distintos. Constituye una segunda etapa.</p>
+
+    <h3>Crecimiento del mercado</h3>
+    <p>El mercado de salud digital en América Latina se estimó en USD 5.755 millones en 2025 con una tasa de crecimiento anual compuesta del <strong>9,5%</strong> proyectada a 2035 (<a href="https://www.informesdeexpertos.com/informes/mercado-de-salud-digital-en-america-latina">Informes de Expertos</a>). El segmento de salud inteligente en la región crece al <strong>13%</strong> anual a 2030, y <a href="https://www.grandviewresearch.com/horizon/outlook/smart-healthcare-market/latin-america">Argentina es el país con mayor tasa de crecimiento proyectada de la región</a>. El componente de software, en particular, crece al <strong>17,7%</strong> anual a 2031 (<a href="https://www.mordorintelligence.ar/industry-reports/digital-health-market">Mordor Intelligence</a>).</p>
+    <p>El mercado crece, pero eso no dice cuántas sedes va a sumar este módulo: un producto nuevo crece por los clientes que consigue. Por eso la proyección de abajo cuenta sedes que se suman cada año, y no aplica una tasa de crecimiento. Que el mercado crezca juega a favor: en tres años habrá más de las 4.500 sedes de hoy.</p>
+
+    <h3>Proyección de adopción e ingresos</h3>
+    <p>La tabla estima cuántas sedes usarían el módulo al cierre de cada año y cuánto facturaría Intuit Salud por licencias si todas ellas pagaran el año completo, a USD 6.000 por sede y año. Es un supuesto de ritmo comercial, no una previsión: sirve para dimensionar el producto, no para comprometer ventas.</p>
+
+    <div class="tabla-wrap">
+      <table>
+        <caption>Facturación por licencia a régimen, es decir con todas las sedes de ese año pagando doce meses. No incluye la mensajería, que se factura a costo.</caption>
+        <thead><tr><th>Año</th><th>De dónde salen las sedes</th><th class="num">Sedes acumuladas</th><th class="num">Facturación anual por licencia</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>La red de esta propuesta (8 sedes) más dos pilotos en redes de tamaño similar, de 4 sedes cada uno.</td>
+            <td class="num">16</td>
+            <td class="num">USD 96.000</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Se suman cinco redes comparables de 8 sedes (40) y ventas sueltas a instituciones medianas (4).</td>
+            <td class="num">60</td>
+            <td class="num">USD 360.000</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Se alcanza el 3% del mercado accesible (SAM de 4.500 sedes), sumando 75 sedes más entre redes e instituciones medianas.</td>
+            <td class="num">135</td>
+            <td class="num">USD 810.000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <h3>Costo para Intuit Salud y economía del producto</h3>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Costo interno del primer despliegue, a USD 3.000 por persona y mes, USD 17,30 la hora, según la tabla de horas del plan de implementación.</caption>
+        <thead><tr><th>Concepto</th><th class="num">Horas</th><th class="num">Costo</th></tr></thead>
+        <tbody>
+          <tr><td>Desarrollo del módulo (reutilizable)</td><td class="num">1.330</td><td class="num">USD 23.000</td></tr>
+          <tr><td>Diseño (reutilizable)</td><td class="num">260</td><td class="num">USD 4.500</td></tr>
+          <tr><td>Responsable de producto (reutilizable en su mayor parte)</td><td class="num">350</td><td class="num">USD 6.000</td></tr>
+          <tr><td>Implantación, medición y capacitación en la red (por cliente)</td><td class="num">810</td><td class="num">USD 14.000</td></tr>
+          <tr class="destacada"><td class="rotulo">Total primer despliegue</td><td class="num">2.750</td><td class="num"><strong>USD 47.500</strong></td></tr>
+          <tr><td>Infraestructura del módulo</td><td></td><td class="num">USD 500 a 1.000 por mes</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Con la oferta de referencia, la primera red paga USD 25.000 por la implantación (un servicio: medir, configurar, integrar y capacitar; cubre los USD 14.000 que cuesta hacerlo) y USD 48.000 por año de licencia por usar el módulo, que sigue siendo de Intuit Salud. Entre las dos cosas, el primer año entran USD 73.000 contra USD 47.500 de costo: el desarrollo reutilizable (USD 33.500) queda cubierto con el primer cliente. Desde el segundo, cada sede nueva cuesta USD 2.000 de implantación más un poco de infraestructura, y paga USD 6.000 por año de licencia. Pero eso no es todo el costo: hay que sostener soporte, venta y mejoras del módulo, que crecen con la cantidad de sedes. La tabla siguiente los incluye.</p>
+
+    <h3>Resultado del módulo a tres años</h3>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Estimación con la trayectoria de adopción de la tabla anterior (16, 60 y 135 sedes acumuladas), USD 3.000 por persona y mes, implantación cobrada a USD 3.125 por sede (la proporción de la oferta de referencia) y con costo de USD 2.000 por sede. Las sedes que entran en un año pagan en promedio medio año de licencia ese año; los años siguientes, completo. La mensajería queda afuera porque se factura a costo.</caption>
+        <thead><tr><th>Concepto</th><th class="num">Año 1</th><th class="num">Año 2</th><th class="num">Año 3</th></tr></thead>
+        <tbody>
+          <tr><td>Sedes nuevas / acumuladas</td><td class="num">16 / 16</td><td class="num">44 / 60</td><td class="num">75 / 135</td></tr>
+          <tr><td>Ingreso por implantación</td><td class="num">USD 50.000</td><td class="num">USD 137.500</td><td class="num">USD 234.400</td></tr>
+          <tr><td>Ingreso por licencia</td><td class="num">USD 48.000</td><td class="num">USD 228.000</td><td class="num">USD 585.000</td></tr>
+          <tr class="destacada"><td class="rotulo">Ingresos</td><td class="num"><strong>USD 98.000</strong></td><td class="num"><strong>USD 365.500</strong></td><td class="num"><strong>USD 819.400</strong></td></tr>
+          <tr><td>Desarrollo inicial y evolución del módulo (2.600 horas al año desde el segundo, 3.100 en el tercero)</td><td class="num">USD 60.000</td><td class="num">USD 45.000</td><td class="num">USD 54.000</td></tr>
+          <tr><td>Implantación (USD 2.000 por sede)</td><td class="num">USD 32.000</td><td class="num">USD 88.000</td><td class="num">USD 150.000</td></tr>
+          <tr><td>Soporte (1.000 / 2.100 / 4.200 horas al año)</td><td class="num">USD 18.000</td><td class="num">USD 36.000</td><td class="num">USD 72.000</td></tr>
+          <tr><td>Venta y preventa (1.000 / 2.100 / 3.100 horas al año)</td><td class="num">USD 18.000</td><td class="num">USD 36.000</td><td class="num">USD 54.000</td></tr>
+          <tr><td>Responsable de producto (1.000 horas al año)</td><td class="num">USD 18.000</td><td class="num">USD 18.000</td><td class="num">USD 18.000</td></tr>
+          <tr><td>Infraestructura</td><td class="num">USD 9.000</td><td class="num">USD 24.000</td><td class="num">USD 48.000</td></tr>
+          <tr class="destacada"><td class="rotulo">Costos</td><td class="num"><strong>USD 155.000</strong></td><td class="num"><strong>USD 247.000</strong></td><td class="num"><strong>USD 396.000</strong></td></tr>
+          <tr class="destacada"><td class="rotulo">Resultado del año</td><td class="num"><strong>USD −57.000</strong></td><td class="num"><strong>USD 118.500</strong></td><td class="num"><strong>USD 423.400</strong></td></tr>
+          <tr><td>Resultado acumulado</td><td class="num">USD −57.000</td><td class="num">USD 61.500</td><td class="num">USD 484.900</td></tr>
+          <tr><td>Horas de implantación necesarias (110 por sede)</td><td class="num">1.800</td><td class="num">4.900</td><td class="num">8.400</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Lectura.</strong> El módulo pierde USD 57.000 el primer año, recupera esa pérdida durante el segundo y en el tercero deja como resultado cerca de la mitad de lo que factura. Lo difícil no es el software: es armar el equipo de implantación (de 1.800 a 8.400 horas al año en tres años) y vender a redes medianas por licitación, que lleva tiempo.</p>
+
+    <h3>Qué pasa con las instituciones chicas</h3>
+    <p>La reasignación entre consultorios, que es lo que ningún oferente relevado ofrece, requiere al menos dos consultorios de la misma especialidad en la sede. En un centro con un consultorio por especialidad el módulo queda reducido a confirmación activa, ajuste de la agenda y vista de paciente, y en ese recorte compite de frente, y por precio, con las agendas con recordatorios. Por eso esos establecimientos quedan fuera del SAM y no se los cuenta en la adopción. Si en el futuro se decidiera atenderlos, sería con una versión reducida y otro precio, y sería otro caso de negocio.</p>
+
+    <h3>Lo que hay que validar antes de invertir en el producto</h3>
+    <ul class="limpia">
+      <li>La proporción de establecimientos con varios consultorios por especialidad, que define el SAM. El REFES no informa cantidad de consultorios; requiere cruce con habilitaciones provinciales o una muestra propia de establecimientos.</li>
+      <li>El ritmo comercial del año 2, que es el supuesto más sensible del resultado a tres años: cinco redes por licitación en doce meses exige capacidad de preventa desde el primer año.</li>
+      <li>La disposición a pagar de las redes medianas, distinta de la de una red de ocho sedes con dirección de operaciones centralizada.</li>
+      <li>Cuánto cuesta realmente implantar cada sede cuando son muchas: eso decide el resultado del producto, más que el desarrollo.</li>
+    </ul>
+  </section>
+
+  </div>
+
+  <hr class="fin">
+
+</div>
+
+<script>
+  (function () {
+    var botones = document.querySelectorAll('.pestana-btn');
+    function mostrar(nombre, empujarHash) {
+      botones.forEach(function (b) {
+        var activa = b.dataset.tab === nombre;
+        b.classList.toggle('activa', activa);
+        b.setAttribute('aria-selected', activa ? 'true' : 'false');
+      });
+      document.querySelectorAll('.pestana').forEach(function (p) {
+        p.classList.toggle('activa', p.id === 'tab-' + nombre);
+      });
+      if (empujarHash) history.replaceState(null, '', '#' + nombre);
+      window.scrollTo(0, 0);
+    }
+    botones.forEach(function (b) {
+      b.addEventListener('click', function () { mostrar(b.dataset.tab, true); });
+    });
+    var inicial = location.hash.replace('#', '');
+    if (['resumen', 'propuesta', 'negocio', 'anexo'].indexOf(inicial) !== -1) mostrar(inicial, false);
+  })();
+</script>
