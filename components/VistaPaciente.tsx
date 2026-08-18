@@ -18,7 +18,7 @@
  *    Ley 25.326, arts. 2 y 7: los datos de salud son sensibles.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   formatoHora,
   severidadDeEspera,
@@ -26,6 +26,8 @@ import {
   type Turno,
 } from '@/lib/domain';
 import { asignarCodigos, estimar, type Estimacion } from '@/lib/estimacion';
+import type { Reasignacion } from '@/lib/optimizador';
+import { ReservaTurno } from './ReservaTurno';
 import {
   FECHA_DEMO,
   enlaceDescarga,
@@ -44,6 +46,10 @@ interface Props {
   onConfirmar: (turnoId: string) => void;
   onCancelar: (turnoId: string) => void;
   confirmados: ReadonlySet<string>;
+  /** Oferta de reasignación pendiente para el paciente que se está mostrando. */
+  oferta?: Reasignacion;
+  onAceptarOferta: (turnoId: string) => void;
+  onRechazarOferta: (turnoId: string) => void;
 }
 
 export function VistaPaciente({
@@ -55,6 +61,9 @@ export function VistaPaciente({
   onConfirmar,
   onCancelar,
   confirmados,
+  oferta,
+  onAceptarOferta,
+  onRechazarOferta,
 }: Props) {
   const enSala = turnos.filter((t) => t.estado === 'en_espera');
 
@@ -89,6 +98,9 @@ export function VistaPaciente({
         confirmado={
           turnoSeleccionado ? confirmados.has(turnoSeleccionado.id) : false
         }
+        oferta={oferta}
+        onAceptarOferta={onAceptarOferta}
+        onRechazarOferta={onRechazarOferta}
       />
       <PantallaSala
         turnos={turnos}
@@ -112,6 +124,9 @@ function Telefono({
   onConfirmar,
   onCancelar,
   confirmado,
+  oferta,
+  onAceptarOferta,
+  onRechazarOferta,
 }: {
   turnos: readonly Turno[];
   turno?: Turno;
@@ -122,12 +137,45 @@ function Telefono({
   onConfirmar: (id: string) => void;
   onCancelar: (id: string) => void;
   confirmado: boolean;
+  oferta?: Reasignacion;
+  onAceptarOferta: (id: string) => void;
+  onRechazarOferta: (id: string) => void;
 }) {
   const estimacion = turno ? estimar(turno, turnos, ahora) : null;
   /* El mismo código que aparece en la pantalla de sala: el paciente tiene que
      poder cruzar las dos superficies sin preguntarle a nadie. */
   const codigos = useMemo(() => asignarCodigos(turnos), [turnos]);
   const codigo = turno ? codigos.get(turno.id) : undefined;
+
+  /* Segunda función del teléfono: sacar un turno nuevo. Es donde se pregunta
+   * si es primera consulta, que es lo que habilita el turno diferenciado. */
+  const [modo, setModo] = useState<'turno' | 'reservar'>('turno');
+  const especialidades = useMemo(
+    () => [...new Set(turnos.map((t) => t.especialidad))].sort(),
+    [turnos],
+  );
+  const conmutador = (
+    <nav className="mt-3 flex rounded-sm border border-rule bg-surface p-0.5" aria-label="Sección del teléfono">
+      {(
+        [
+          ['turno', 'Mi turno de hoy'],
+          ['reservar', 'Sacar turno'],
+        ] as const
+      ).map(([m, rotulo]) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => setModo(m)}
+          aria-current={modo === m ? 'page' : undefined}
+          className={`flex-1 rounded-xs px-2 py-1 text-[0.75rem] font-semibold transition ${
+            modo === m ? 'bg-ink text-white' : 'text-ink-soft hover:text-ink'
+          }`}
+        >
+          {rotulo}
+        </button>
+      ))}
+    </nav>
+  );
 
   return (
     <section className="rounded-sm border border-rule bg-surface">
@@ -155,10 +203,33 @@ function Telefono({
         </label>
       </header>
 
-      {!turno ? (
-        <p className="px-4 py-8 text-[0.875rem] text-ink-soft">
-          Elegí un paciente para ver su pantalla.
-        </p>
+      {modo === 'reservar' ? (
+        <div className="px-4 py-4">
+          <div className="mx-auto max-w-[19rem] rounded-[1.75rem] border-[6px] border-ink bg-ground p-3 shadow-sm">
+            <p className="text-center text-[0.625rem] font-semibold uppercase tracking-widest text-ink-faint">
+              Cadencia
+            </p>
+            {conmutador}
+            <ReservaTurno
+              especialidades={especialidades}
+              sedeNombre={sedeNombre}
+              hoy={FECHA_DEMO}
+              onVolver={() => setModo('turno')}
+            />
+          </div>
+        </div>
+      ) : !turno ? (
+        <div className="px-4 py-4">
+          <div className="mx-auto max-w-[19rem] rounded-[1.75rem] border-[6px] border-ink bg-ground p-3 shadow-sm">
+            <p className="text-center text-[0.625rem] font-semibold uppercase tracking-widest text-ink-faint">
+              Cadencia
+            </p>
+            {conmutador}
+            <p className="mt-3 rounded-sm bg-surface px-3 py-6 text-center text-[0.8125rem] text-ink-soft">
+              No tenés turnos hoy.
+            </p>
+          </div>
+        </div>
       ) : !estimacion ? (
         /* Con el reloj corriendo, el paciente elegido pasa a consulta o
          * termina en medio de la demo. Dejar la pantalla en blanco haría
@@ -185,6 +256,7 @@ function Telefono({
             <p className="text-center text-[0.625rem] font-semibold uppercase tracking-widest text-ink-faint">
               Cadencia
             </p>
+            {conmutador}
 
             <div className="mt-3 rounded-sm bg-surface p-3">
               <p className="text-[0.6875rem] text-ink-soft">
@@ -196,6 +268,43 @@ function Telefono({
 
               <Ventana estimacion={estimacion} agendado={turno.agendadoA} />
 
+              {/* LA OFERTA. Reasignar es cambiar de profesional; el paciente es
+                  quien sabe si le importa la continuidad. Se le muestra qué
+                  gana, con quién, y decide. Ventana corta: el consultorio
+                  libre no espera. */}
+              {oferta && (
+                <div className="mt-3 rounded-sm border border-accent/40 bg-accent-soft px-2.5 py-2">
+                  <p className="text-[0.75rem] font-semibold leading-snug text-ink">
+                    Podés pasar {Math.round(oferta.minutosAhorrados)} minutos antes en{' '}
+                    {nombreConsultorio(oferta.haciaConsultorio)}, con otro profesional
+                    de {turno.especialidad}.
+                  </p>
+                  <p className="tabular mt-0.5 text-[0.6875rem] text-ink-soft">
+                    Estimado {formatoHora(oferta.inicioConPlan)} en lugar de{' '}
+                    {formatoHora(oferta.inicioSinAccion)}.
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAceptarOferta(turno.id)}
+                      className="flex-1 rounded-sm bg-accent px-2 py-1.5 text-[0.75rem] font-semibold text-white transition hover:brightness-110"
+                    >
+                      Acepto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRechazarOferta(turno.id)}
+                      className="flex-1 rounded-sm border border-rule bg-surface px-2 py-1.5 text-[0.75rem] font-semibold text-ink-soft transition hover:text-ink"
+                    >
+                      Prefiero esperar a mi médico
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-[0.625rem] leading-snug text-ink-faint">
+                    Si no respondés en unos minutos, seguís con tu médico y el lugar pasa a otro paciente.
+                  </p>
+                </div>
+              )}
+
               {/* Un cambio de sala se AVISA y se explica el porqué.
                   El paciente está sentado mirando una puerta; cambiarle la
                   puerta en silencio es indistinguible de un error para quien
@@ -204,11 +313,10 @@ function Telefono({
               {turno.reasignadoDesde && (
                 <p className="mt-3 rounded-sm border border-sev-normal/30 bg-sev-normal-bg px-2.5 py-2 text-[0.75rem] leading-snug text-ink">
                   <strong className="font-semibold">
-                    Te cambiamos de consultorio para que pases antes.
+                    Cambio confirmado: pasás antes.
                   </strong>{' '}
-                  Ahora te atienden en {nombreConsultorio(turno.consultorioId)},
-                  no en {nombreConsultorio(turno.reasignadoDesde)}. Tu código no
-                  cambia.
+                  Te atienden en {nombreConsultorio(turno.consultorioId)}, no en{' '}
+                  {nombreConsultorio(turno.reasignadoDesde)}. Tu código no cambia.
                 </p>
               )}
 
@@ -357,7 +465,7 @@ function Ventana({
   );
 }
 
-/* ── Pantalla de sala de espera ──────────────────────────────────────────── */
+/* ── Turnera de la sala de espera ──────────────────────────────────────────── */
 
 function PantallaSala({
   turnos,
@@ -385,7 +493,7 @@ function PantallaSala({
     <section className="overflow-hidden rounded-sm border border-rule">
       <header className="flex items-baseline justify-between border-b border-rule bg-surface px-4 py-3">
         <div>
-          <p className="eyebrow">Pantalla de sala de espera</p>
+          <p className="eyebrow">Turnera de la sala de espera</p>
           <h2 className="font-display text-lg font-semibold tracking-tight text-ink">
             Sin nombres, por diseño
           </h2>

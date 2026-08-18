@@ -1,13 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CarrilDeriva } from '@/components/CarrilDeriva';
-import { GraficoEscenarios, TablaResumen } from '@/components/GraficoEscenarios';
 import { PanelAlertas } from '@/components/PanelAlertas';
-import { PanelOptimizacion } from '@/components/PanelOptimizacion';
+import { PanelOptimizacion, type Oferta } from '@/components/PanelOptimizacion';
+import { PanelRecepcion, type AccionRecepcion } from '@/components/PanelRecepcion';
 import { TiraMetricas } from '@/components/TiraMetricas';
 import { VistaPaciente } from '@/components/VistaPaciente';
 import { VistaRed, construirFilas } from '@/components/VistaRed';
+import { VistaGerencia } from '@/components/VistaGerencia';
 import { generarAlertas, type Alerta } from '@/lib/alertas';
 import {
   JORNADA,
@@ -16,13 +17,25 @@ import {
   type Minutos,
   type Turno,
 } from '@/lib/domain';
-import { compararEscenarios } from '@/lib/escenarios';
+import { indicadoresGerencia } from '@/lib/gerencia';
+import { expandir, type DatosCompactos } from '@/lib/periodos';
+import datosGerenciaCompactos from '@/data/gerencia.json';
 import { calcularMetricas, estadoPorConsultorio } from '@/lib/metricas';
-import { planificar } from '@/lib/optimizador';
+import { planificar, type Reasignacion } from '@/lib/optimizador';
 import { generarRed, proyectar, type TurnoPlan } from '@/lib/seed';
 
 /** Hora de arranque de la demo: media mañana, con el día ya desordenado. */
 const HORA_INICIAL: Minutos = 11 * 60 + 20;
+
+/** Minutos que tiene el paciente para responder una oferta de cambio. */
+const VENTANA_OFERTA: Minutos = 3;
+
+/** Respuesta determinista del paciente simulado: acepta 8 de cada 10. */
+function aceptaSimulado(turnoId: string): boolean {
+  let h = 0;
+  for (let i = 0; i < turnoId.length; i++) h = (h * 31 + turnoId.charCodeAt(i)) >>> 0;
+  return h % 10 < 8;
+}
 
 /**
  * Intervención manual sobre el día.
@@ -33,21 +46,31 @@ const HORA_INICIAL: Minutos = 11 * 60 + 20;
  * tablero quede incoherente — que es lo que rompe en un mockup.
  */
 interface Ajuste {
+  /** Recepción registró la llegada a mano. */
+  checkInA?: Minutos;
   inicioA?: Minutos;
   ausente?: boolean;
+  /** Cuándo recepción lo marcó ausente; si ya había llegado, cuenta como que esperó hasta ahí. */
+  ausenteDesde?: Minutos;
   /** El paciente avisó que no viene: el turno se libera. */
   cancelado?: boolean;
   /** Reasignación a otro consultorio de la misma especialidad. */
   consultorioId?: string;
 }
 
-type Vista = 'red' | 'sede' | 'escenarios' | 'paciente';
+type Vista = 'red' | 'sede' | 'paciente';
+/** Red y Sede tienen dos alcances: lo que pasa hoy, y los indicadores por período. */
+type Alcance = 'hoy' | 'periodo';
 
 function aplicarAjuste(p: TurnoPlan, aj: Ajuste | undefined, ahora: Minutos): Turno {
   if (!aj) return proyectar(p, ahora);
 
   if (aj.ausente) {
-    return proyectar({ ...p, desenlace: 'ausente', marcadoAusenteA: p.agendadoA }, ahora);
+    const marcado = aj.ausenteDesde ?? p.agendadoA;
+    return proyectar(
+      { ...p, desenlace: 'ausente', marcadoAusenteA: marcado, checkInA: aj.checkInA ?? p.checkInA },
+      ahora,
+    );
   }
 
   /* Avisar no es lo mismo que faltar: el turno se libera y puede reasignarse
@@ -58,9 +81,22 @@ function aplicarAjuste(p: TurnoPlan, aj: Ajuste | undefined, ahora: Minutos): Tu
   }
 
   const reasignado = aj.consultorioId !== undefined && aj.consultorioId !== p.consultorioId;
-  const base: TurnoPlan = reasignado
-    ? { ...p, consultorioId: aj.consultorioId! }
-    : p;
+  let base: TurnoPlan = reasignado ? { ...p, consultorioId: aj.consultorioId! } : p;
+
+  /* Llegada registrada en el mostrador. Si el generador tenía a este paciente
+   * como ausente, la llegada lo desmiente: pasa a la sala y queda ahí hasta
+   * que recepción lo pase a consulta (o el plan lo mueva). Si ya tenía una
+   * llegada simulada, gana la más temprana. */
+  if (aj.checkInA !== undefined) {
+    const veniaAusente = base.desenlace !== 'atendido';
+    base = {
+      ...base,
+      desenlace: 'atendido',
+      checkInA: Math.min(aj.checkInA, base.checkInA ?? Infinity),
+      inicioA: veniaAusente ? undefined : base.inicioA,
+      finA: veniaAusente ? undefined : base.finA,
+    };
+  }
 
   // El consultorio de origen viaja con el turno: es lo que permite avisarle
   // al paciente que se movió, en lugar de cambiarle la puerta sin decir nada.
@@ -87,21 +123,13 @@ function aplicarAjuste(p: TurnoPlan, aj: Ajuste | undefined, ahora: Minutos): Tu
 export default function Tablero() {
   const red = useMemo(() => generarRed(), []);
   const [vista, setVista] = useState<Vista>('red');
+  const [alcance, setAlcance] = useState<Alcance>('hoy');
   const [sedeId, setSedeId] = useState(red.sedes[0].id);
   const [ahora, setAhora] = useState<Minutos>(HORA_INICIAL);
   const [corriendo, setCorriendo] = useState(true);
   const [ajustes, setAjustes] = useState<Record<string, Ajuste>>({});
-  const [planAplicado, setPlanAplicado] = useState(false);
   const [descartadas, setDescartadas] = useState<Set<string>>(new Set());
 
-  // Reloj de la simulación: 1 minuto clínico cada 600 ms.
-  useEffect(() => {
-    if (!corriendo) return;
-    const id = setInterval(() => {
-      setAhora((t) => (t >= JORNADA.cierre ? JORNADA.apertura : t + 1));
-    }, 600);
-    return () => clearInterval(id);
-  }, [corriendo]);
 
   const turnos: Turno[] = useMemo(
     () =>
@@ -129,17 +157,9 @@ export default function Tablero() {
     [turnos, estados, ahora, descartadas],
   );
 
-  /* Los escenarios reejecutan la jornada completa cuatro veces (~60 ms).
-   * Se calculan al abrir la pestaña y no dependen del reloj ni de las
-   * intervenciones: son la proyección del día entero, no el estado de ahora. */
-  const resumenes = useMemo(
-    () => (vista === 'escenarios' ? compararEscenarios() : []),
-    [vista],
-  );
-
   // Vista de red: se proyectan las ocho sedes con los mismos ajustes.
-  const filasRed = useMemo(() => {
-    if (vista !== 'red') return [];
+  const turnosPorSede = useMemo(() => {
+    if (vista !== 'red') return new Map<string, Turno[]>();
     const porSede = new Map<string, Turno[]>();
     for (const s of red.sedes) {
       porSede.set(
@@ -149,8 +169,23 @@ export default function Tablero() {
           .map((p) => aplicarAjuste(p, ajustes[p.id], ahora)),
       );
     }
-    return construirFilas(red.sedes, porSede, ahora);
+    return porSede;
   }, [vista, red.sedes, red.planes, ajustes, ahora]);
+
+  const filasRed = useMemo(
+    () => (vista === 'red' ? construirFilas(red.sedes, turnosPorSede, ahora) : []),
+    [vista, red.sedes, turnosPorSede, ahora],
+  );
+
+  const gerencia = useMemo(
+    () => indicadoresGerencia(turnosPorSede, ahora),
+    [turnosPorSede, ahora],
+  );
+
+  /* Vista de gerencia: un año de operación precalculado con `npm run periodos`
+   * (semillas deterministas, mismo simulador). Calcularlo en el navegador
+   * congelaba la pestaña. */
+  const datosGerencia = useMemo(() => expandir(datosGerenciaCompactos as DatosCompactos), []);
 
   /**
    * Toda intervención pasa por la máquina de estados antes de aplicarse.
@@ -164,12 +199,12 @@ export default function Tablero() {
 
       if (turno && (a.tipo === 'consultorio_ocioso' || a.tipo === 'espera_excedida')) {
         if (!puedeTransicionar(turno.estado, 'en_consulta')) return;
-        setAjustes((prev) => ({ ...prev, [turno.id]: { inicioA: ahora } }));
+        setAjustes((prev) => ({ ...prev, [turno.id]: { ...prev[turno.id], inicioA: ahora } }));
         return;
       }
       if (turno && a.tipo === 'riesgo_ausencia') {
         if (!puedeTransicionar(turno.estado, 'ausente')) return;
-        setAjustes((prev) => ({ ...prev, [turno.id]: { ausente: true } }));
+        setAjustes((prev) => ({ ...prev, [turno.id]: { ...prev[turno.id], ausente: true, ausenteDesde: ahora } }));
         return;
       }
       setDescartadas((prev) => new Set(prev).add(a.id));
@@ -177,32 +212,122 @@ export default function Tablero() {
     [ahora, turnos],
   );
 
-  /* Qué turnos movió el plan, para poder deshacer SOLO eso.
-   * Las intervenciones manuales del operador (llamar, marcar ausente) no son
-   * parte del plan y no se pierden al deshacerlo. */
+  /* Qué turnos se movieron por oferta aceptada, para contarlos en el panel. */
   const [movidosPorPlan, setMovidosPorPlan] = useState<string[]>([]);
 
-  const aplicarPlan = useCallback(() => {
-    const aplicables = plan.reasignaciones.filter((r) => {
-      const t = turnos.find((x) => x.id === r.turnoId);
-      // Un paciente que recepción ya marcó ausente no vuelve a la cola.
-      return t !== undefined && t.estado === 'en_espera';
-    });
+  /**
+   * DECISIÓN DE PRODUCTO: el sistema ofrece y el paciente decide. Reasignar
+   * es cambiar de profesional, y si al paciente le importa la continuidad
+   * solo él lo sabe. Las ofertas salen solas, sin que recepción las apruebe,
+   * y cada paciente la acepta o la rechaza desde su teléfono. Sin respuesta
+   * en la ventana, cuenta como rechazo y el lugar pasa al siguiente. Los
+   * turnos marcados como no reasignables no entran al motor (en el prototipo
+   * no hay ninguno marcado).
+   *
+   * En la demo, si nadie responde desde la vista de paciente, el paciente
+   * simulado contesta solo a los VENTANA_OFERTA minutos: acepta 8 de cada 10.
+   */
+  const [ofertas, setOfertas] = useState<Record<string, Oferta>>({});
+  const [rechazadas, setRechazadas] = useState<Set<string>>(new Set());
 
-    setAjustes((prev) => {
-      const siguiente = { ...prev };
-      for (const r of aplicables) {
-        siguiente[r.turnoId] = {
+  /* La oferta se aplica solo si el turno sigue esperando: entre que salió y
+   * que se acepta, recepción pudo pasarlo a consulta o marcarlo ausente. Y el
+   * inicio nunca queda en el pasado: si la aceptación llega después de la hora
+   * prometida, se arranca ahora. La oferta se retira en cualquier caso. */
+  const aplicarMovimiento = useCallback((r: Reasignacion, turnosAhora: readonly Turno[], hora: Minutos) => {
+    const turno = turnosAhora.find((t) => t.id === r.turnoId);
+    if (turno && puedeTransicionar(turno.estado, 'en_consulta')) {
+      setAjustes((prev) => ({
+        ...prev,
+        [r.turnoId]: {
           ...prev[r.turnoId],
           consultorioId: r.haciaConsultorio,
-          inicioA: r.inicioConPlan,
-        };
-      }
-      return siguiente;
+          inicioA: Math.max(r.inicioConPlan, hora),
+        },
+      }));
+      setMovidosPorPlan((prev) => (prev.includes(r.turnoId) ? prev : [...prev, r.turnoId]));
+    }
+    setOfertas((prev) => {
+      const sig = { ...prev };
+      delete sig[r.turnoId];
+      return sig;
     });
-    setMovidosPorPlan(aplicables.map((r) => r.turnoId));
-    setPlanAplicado(true);
-  }, [plan, turnos]);
+  }, []);
+
+  const rechazarOferta = useCallback((turnoId: string) => {
+    setOfertas((prev) => {
+      const sig = { ...prev };
+      delete sig[turnoId];
+      return sig;
+    });
+    setRechazadas((prev) => new Set(prev).add(turnoId));
+  }, []);
+
+  /* El panel muestra solo las ofertas de la sede que se está mirando. */
+  const ofertasSede = useMemo(
+    () => Object.fromEntries(Object.entries(ofertas).filter(([id]) => turnos.some((t) => t.id === id))),
+    [ofertas, turnos],
+  );
+
+  /* El reloj lee el último estado por ref para no re-armar el intervalo en
+   * cada render. */
+  const ultimo = useRef({ ahora, plan, turnos, ofertas, rechazadas, aplicarMovimiento, rechazarOferta });
+  useEffect(() => {
+    ultimo.current = { ahora, plan, turnos, ofertas, rechazadas, aplicarMovimiento, rechazarOferta };
+  });
+
+  /* Reloj de la simulación: 1 minuto clínico cada 600 ms. En cada minuto,
+   * además de avanzar la hora, las ofertas salen solas (cada movimiento del
+   * plan que todavía no se ofreció ni se rechazó le llega al paciente) y el
+   * paciente simulado responde las que vencieron su ventana. */
+  useEffect(() => {
+    if (!corriendo) return;
+    const id = setInterval(() => {
+      setAhora((t) => (t >= JORNADA.cierre ? JORNADA.apertura : t + 1));
+      const u = ultimo.current;
+      /* Al dar la vuelta al día, las ofertas y respuestas del día anterior no
+       * valen: si quedaran, una oferta de las 17:58 seguiría "pendiente" toda
+       * la jornada siguiente. */
+      if (u.ahora >= JORNADA.cierre) {
+        setOfertas({});
+        setRechazadas(new Set());
+        setMovidosPorPlan([]);
+        return;
+      }
+
+      const nuevas = u.plan.reasignaciones.filter((r) => {
+        const t = u.turnos.find((x) => x.id === r.turnoId);
+        return (
+          t !== undefined &&
+          t.estado === 'en_espera' &&
+          !u.ofertas[r.turnoId] &&
+          !u.rechazadas.has(r.turnoId)
+        );
+      });
+      if (nuevas.length > 0) {
+        setOfertas((prev) => {
+          const sig = { ...prev };
+          for (const r of nuevas) sig[r.turnoId] = { ...r, ofrecidaEn: u.ahora };
+          return sig;
+        });
+      }
+
+      for (const o of Object.values(u.ofertas)) {
+        if (u.ahora - o.ofrecidaEn < VENTANA_OFERTA) continue;
+        if (aceptaSimulado(o.turnoId)) u.aplicarMovimiento(o, u.turnos, u.ahora);
+        else u.rechazarOferta(o.turnoId);
+      }
+    }, 600);
+    return () => clearInterval(id);
+  }, [corriendo]);
+
+  const aceptarOferta = useCallback(
+    (turnoId: string) => {
+      const r = ofertas[turnoId];
+      if (r) aplicarMovimiento(r, turnos, ahora);
+    },
+    [ofertas, aplicarMovimiento, turnos, ahora],
+  );
 
   /* Vista de paciente: a quién le estamos mirando la pantalla, y quiénes
    * confirmaron asistencia. */
@@ -231,15 +356,34 @@ export default function Tablero() {
     setAjustes((prev) => ({ ...prev, [id]: { ...prev[id], cancelado: true } }));
   }, []);
 
-  const deshacerPlan = useCallback(() => {
-    setAjustes((prev) => {
-      const siguiente = { ...prev };
-      for (const id of movidosPorPlan) delete siguiente[id];
-      return siguiente;
-    });
-    setMovidosPorPlan([]);
-    setPlanAplicado(false);
-  }, [movidosPorPlan]);
+  /* Acciones del mostrador. Pasan por la misma máquina de estados que las
+   * alertas: si el turno cambió solo entre que recepción miró y tocó, el clic
+   * no hace nada en vez de romper la coherencia del día. */
+  const accionRecepcion = useCallback(
+    (turnoId: string, accion: AccionRecepcion) => {
+      const turno = turnos.find((t) => t.id === turnoId);
+      if (!turno) return;
+      switch (accion) {
+        case 'llego':
+          if (!puedeTransicionar(turno.estado, 'en_espera')) return;
+          setAjustes((prev) => ({ ...prev, [turnoId]: { ...prev[turnoId], checkInA: ahora } }));
+          return;
+        case 'pasar':
+          if (!puedeTransicionar(turno.estado, 'en_consulta')) return;
+          setAjustes((prev) => ({ ...prev, [turnoId]: { ...prev[turnoId], inicioA: ahora } }));
+          return;
+        case 'aviso':
+          if (!puedeTransicionar(turno.estado, 'cancelado')) return;
+          setAjustes((prev) => ({ ...prev, [turnoId]: { ...prev[turnoId], cancelado: true } }));
+          return;
+        case 'no_vino':
+          if (!puedeTransicionar(turno.estado, 'ausente')) return;
+          setAjustes((prev) => ({ ...prev, [turnoId]: { ...prev[turnoId], ausente: true, ausenteDesde: ahora } }));
+          return;
+      }
+    },
+    [turnos, ahora],
+  );
 
   const sede = red.sedes.find((s) => s.id === sedeId)!;
 
@@ -251,13 +395,22 @@ export default function Tablero() {
             <span className="font-display text-xl font-bold tracking-tight text-ink">
               Cadencia
             </span>
+            {/* La propuesta escrita vive en el mismo sitio: quien evalúa tiene que
+                poder ir y volver sin que nadie le explique dónde está cada cosa. */}
+            <a
+              href="/propuesta.html"
+              target="_blank"
+              rel="noopener"
+              className="rounded-xs border border-accent/40 px-2.5 py-1.5 text-[0.8125rem] font-semibold text-accent transition hover:bg-accent-soft"
+            >
+              Propuesta escrita
+            </a>
             <nav className="flex rounded-xs border border-rule" aria-label="Vista">
               {(
                 [
                   ['red', `Red · ${red.sedes.length} sedes`],
-                  ['sede', sede.nombre],
+                  ['sede', 'Sede'],
                   ['paciente', 'Paciente'],
-                  ['escenarios', 'Escenarios'],
                 ] as const
               ).map(([v, rotulo]) => (
                 <button
@@ -278,6 +431,28 @@ export default function Tablero() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {(vista === 'red' || vista === 'sede') && (
+              <nav className="flex rounded-xs border border-rule" aria-label="Alcance">
+                {(
+                  [
+                    ['hoy', 'Hoy'],
+                    ['periodo', 'Por período'],
+                  ] as const
+                ).map(([a, rotulo]) => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => setAlcance(a)}
+                    aria-current={alcance === a ? 'page' : undefined}
+                    className={`px-2.5 py-1.5 text-[0.8125rem] font-semibold transition ${
+                      alcance === a ? 'bg-ink text-white' : 'text-ink-soft hover:text-ink'
+                    }`}
+                  >
+                    {rotulo}
+                  </button>
+                ))}
+              </nav>
+            )}
             {(vista === 'sede' || vista === 'paciente') && (
               <select
                 value={sedeId}
@@ -324,19 +499,16 @@ export default function Tablero() {
       </header>
 
       <main className="mx-auto max-w-[100rem] space-y-4 px-4 py-4">
-        {vista === 'escenarios' ? (
+        {vista !== 'paciente' && alcance === 'periodo' ? (
           <>
-            <h1 className="sr-only">Comparación de escenarios</h1>
-            {resumenes.length === 0 ? (
-              <p className="rounded-sm border border-rule bg-surface px-4 py-8 text-[0.875rem] text-ink-soft">
-                Simulando la jornada bajo cada política…
-              </p>
-            ) : (
-              <>
-                <TablaResumen resumenes={resumenes} />
-                <GraficoEscenarios resumenes={resumenes} />
-              </>
-            )}
+            <h1 className="sr-only">
+              Indicadores por período · {vista === 'red' ? 'red completa' : sede.nombre}
+            </h1>
+            <VistaGerencia
+              datos={datosGerencia}
+              sedeId={vista === 'sede' ? sede.id : undefined}
+              sedeNombre={vista === 'sede' ? sede.nombre : undefined}
+            />
           </>
         ) : vista === 'paciente' ? (
           <>
@@ -352,6 +524,9 @@ export default function Tablero() {
               onConfirmar={confirmar}
               onCancelar={cancelar}
               confirmados={confirmados}
+              oferta={turnoPaciente ? ofertas[turnoPaciente.id] : undefined}
+              onAceptarOferta={aceptarOferta}
+              onRechazarOferta={rechazarOferta}
             />
           </>
         ) : vista === 'red' ? (
@@ -360,6 +535,7 @@ export default function Tablero() {
             <VistaRed
               filas={filasRed}
               ahora={ahora}
+              gerencia={gerencia}
               onAbrirSede={(id) => {
                 setSedeId(id);
                 setVista('sede');
@@ -374,14 +550,21 @@ export default function Tablero() {
             <TiraMetricas m={metricas} />
             <PanelOptimizacion
               plan={plan}
-              aplicado={planAplicado}
-              onAplicar={aplicarPlan}
-              onDeshacer={deshacerPlan}
+              ofertas={ofertasSede}
+              movidos={movidosPorPlan.length}
+              rechazadas={rechazadas.size}
             />
             <div className="grid gap-4 xl:grid-cols-[1fr_22rem]">
-              <CarrilDeriva consultorios={consultorios} turnos={turnos} ahora={ahora} />
+              <PanelRecepcion
+                turnos={turnos}
+                consultorios={consultorios}
+                profesionales={red.profesionales}
+                ahora={ahora}
+                onAccion={accionRecepcion}
+              />
               <PanelAlertas alertas={alertas} onEjecutar={ejecutar} />
             </div>
+            <CarrilDeriva consultorios={consultorios} turnos={turnos} ahora={ahora} />
           </>
         )}
       </main>

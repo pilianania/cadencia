@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# copia generada en el build desde propuesta/propuesta.html
+/public/propuesta.html

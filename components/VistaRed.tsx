@@ -25,6 +25,7 @@ import {
 } from '@/lib/domain';
 import { calcularMetricas, estadoPorConsultorio } from '@/lib/metricas';
 import { generarAlertas } from '@/lib/alertas';
+import { VALORES, type IndicadoresGerencia } from '@/lib/gerencia';
 
 const TEXTO: Record<Severidad, string> = {
   normal: 'text-sev-normal',
@@ -111,10 +112,11 @@ export function construirFilas(
 interface Props {
   filas: readonly FilaSede[];
   ahora: Minutos;
+  gerencia: IndicadoresGerencia;
   onAbrirSede: (sedeId: string) => void;
 }
 
-export function VistaRed({ filas, ahora, onAbrirSede }: Props) {
+export function VistaRed({ filas, ahora, gerencia, onAbrirSede }: Props) {
   const total = useMemo(() => {
     const n = filas.length || 1;
     return {
@@ -149,6 +151,12 @@ export function VistaRed({ filas, ahora, onAbrirSede }: Props) {
           />
         </dl>
       </header>
+
+      {/* TIRA DE GERENCIA. Los cuatro números del caso de negocio, en vivo.
+          Es lo que la Dirección ve hoy y lo que después se factura o se
+          pierde. Sin esto el tablero es operativo; con esto es un contrato
+          de resultado que se puede leer todos los días. */}
+      <TiraGerencia g={gerencia} />
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[46rem] border-collapse text-left">
@@ -242,6 +250,68 @@ export function VistaRed({ filas, ahora, onAbrirSede }: Props) {
         </table>
       </div>
     </section>
+  );
+}
+
+function TiraGerencia({ g }: { g: IndicadoresGerencia }) {
+  const horasLibre = g.minutosLibreConSala / 60;
+  const horasRecuperables = g.minutosLibreRecuperables / 60;
+  const usd = (n: number) =>
+    `USD ${Math.round(n).toLocaleString('es-AR')}`;
+
+  return (
+    <div className="grid grid-cols-2 divide-rule border-b border-rule bg-sunken lg:grid-cols-4 lg:divide-x">
+      <Indicador
+        rotulo="Turnos perdidos sin aviso"
+        valor={String(g.perdidosSinAviso)}
+        pie={`${usd(g.perdidosSinAviso * VALORES.facturacionPorConsultaUsd)} de facturación no realizada`}
+        clase={g.perdidosSinAviso > 0 ? TEXTO.critica : undefined}
+      />
+      <Indicador
+        rotulo="Liberados con aviso"
+        valor={String(g.liberadosConAviso)}
+        pie="Reasignables a la lista de espera"
+        clase={TEXTO.normal}
+      />
+      {/* Se separa lo que la reasignación puede recuperar (alguien de la misma
+          especialidad esperando) de lo estructural (un cardiólogo libre
+          mientras esperan de dermatología), que se ataca planificando la
+          agenda entre especialidades. */}
+      <Indicador
+        rotulo="Consultorio libre con pacientes de su especialidad esperando"
+        valor={`${horasRecuperables.toFixed(1)} h`}
+        pie={`${usd(horasRecuperables * VALORES.horaMedicaUsd)} recuperables reasignando · ${horasLibre.toFixed(1)} h libres con gente de otra especialidad esperando`}
+        clase={horasRecuperables >= 1 ? TEXTO.moderada : TEXTO.normal}
+      />
+      <Indicador
+        rotulo="Uso efectivo de la agenda"
+        valor={`${Math.round(g.usoEfectivo * 100)}%`}
+        pie={`Atendidos sobre ${g.vencidos} turnos vencidos`}
+        clase={g.usoEfectivo < 0.7 ? TEXTO.moderada : TEXTO.normal}
+      />
+    </div>
+  );
+}
+
+function Indicador({
+  rotulo,
+  valor,
+  pie,
+  clase,
+}: {
+  rotulo: string;
+  valor: string;
+  pie: string;
+  clase?: string;
+}) {
+  return (
+    <div className="border-b border-rule px-4 py-2.5 lg:border-b-0">
+      <p className="eyebrow text-[0.625rem]">{rotulo}</p>
+      <p className={`tabular font-display text-xl font-semibold leading-tight ${clase ?? 'text-ink'}`}>
+        {valor}
+      </p>
+      <p className="text-[0.6875rem] text-ink-faint">{pie}</p>
+    </div>
   );
 }
 

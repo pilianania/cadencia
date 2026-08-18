@@ -1,36 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cadencia · gestión de turnos ambulatorios
 
-## Getting Started
+Prototipo funcional, propuesta técnica y caso de negocio para una red de ocho
+clínicas ambulatorias que busca reducir la espera de sus pacientes.
 
-First, run the development server:
+## Dónde está cada cosa
+
+| Qué | Dónde |
+|---|---|
+| Prototipo (aplicación web) | En la raíz del sitio desplegado, o local con `npm run dev` en http://localhost:3000. Pestañas Red, Sede y Paciente; en Red y Sede, conmutador Hoy / Por período. |
+| Propuesta escrita | `propuesta/propuesta.html` (se sirve en `/propuesta.html` del sitio desplegado). Cuatro pestañas: Resumen, Propuesta, Negocio, Anexo. |
+| Fuentes de la propuesta | `propuesta/*.md`: resumen ejecutivo, plan de implementación, propuesta de valor, caso de negocio, anexo de supuestos. |
+| Simulador y modelo | `lib/seed.ts` (generación de la jornada), `lib/simulador.ts` (la jornada minuto a minuto), `lib/optimizador.ts` (motor de reasignación), `lib/escenarios.ts` (escenarios y réplicas), `lib/periodos.ts` (año simulado para la vista Por período). |
+| Análisis reproducibles | `npm run analisis` (escenarios, opciones con costo y sensibilidades; 64 réplicas), `npm run periodos` (regenera `data/gerencia.json`), `npm run umbral` (ganancia mínima del motor). Todo número del documento sale de ahí. |
+| Notas para la defensa | `NOTAS-DEFENSA.md` |
+
+## Correr local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`npm run build` copia la propuesta a `public/` y compila la aplicación; es lo
+que corre el despliegue.
