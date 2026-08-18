@@ -1,10 +1,10 @@
 /**
  * Definición de escenarios y comparación.
  *
- * Fuente única para el gráfico de la aplicación y para `npm run analisis`.
- * Si el número de la pantalla y el del documento salieran de dos lugares
- * distintos, tarde o temprano dejan de coincidir — y el que lo note va a ser
- * el cliente, en la reunión.
+ * Fuente de las cifras del caso de negocio (`npm run analisis`) y de las
+ * palancas que el año simulado de gerencia (`lib/periodos.ts`) despliega por
+ * fases. No es una pantalla del producto: es el sustento de la propuesta,
+ * reproducible delante del cliente si alguien discute un supuesto.
  */
 
 import { JORNADA, type Minutos } from './domain';
@@ -19,6 +19,13 @@ export interface Escenario {
   factorSobreagenda: number;
   reduccionAusencias: number;
   reasignar: boolean;
+  factorPrimeraVez?: number;
+  /** Duración real de la consulta relativa a hoy (asistente clínico). */
+  factorDuracionReal?: number;
+  /** Proporción de primeras consultas (sensibilidad del supuesto). */
+  proporcionPrimeraVez?: number;
+  /** Turno nominal relativo a hoy (alargar todos los turnos). */
+  factorSlot?: number;
   nota: string;
 }
 
@@ -43,26 +50,43 @@ export const ESCENARIOS: readonly Escenario[] = [
   },
   {
     id: 'recordatorios',
-    nombre: 'Fase 2 · Recordatorios',
+    nombre: 'Fase 2 mal hecha · Recordatorios sin ajustar la agenda',
     corto: 'Recordatorios',
     factorSobreagenda: 0.35,
     reduccionAusencias: 0.35,
     reasignar: true,
     nota:
-      'Bajan las ausencias del 33% al 21%. Pero si no se desagenda, esos ' +
-      'pacientes recuperados entran en una grilla armada asumiendo que no ' +
-      'iban a venir: la espera EMPEORA.',
+      'Bajan las ausencias del 32% al 21%. Pero si no se ajusta la agenda, ' +
+      'esos pacientes recuperados entran en una agenda armada asumiendo que ' +
+      'no iban a venir: la espera EMPEORA y queda peor que hoy.',
   },
   {
     id: 'desagendar',
-    nombre: 'Fase 3 · Desagendar',
-    corto: 'Desagendar',
+    nombre: 'Fase 2 · Confirmación y agenda ajustada',
+    corto: 'Agenda ajustada',
     factorSobreagenda: 0.1,
     reduccionAusencias: 0.35,
     reasignar: true,
     nota:
-      'Con las ausencias bajo control ya no hace falta sobreagendar. Recién ' +
-      'acá la espera cae de verdad y la jornada cierra en horario.',
+      'Con las ausencias bajo control se ajusta la agenda al ausentismo ' +
+      'medido, conservando el volumen (queda un 10% de sobreagenda). La ' +
+      'espera se mantiene en la de la fase 1 (la diferencia está dentro del ' +
+      'error) y las ausencias bajan un tercio con las mismas consultas. ' +
+      'Bajar de acá cuesta turnos: sin ninguna sobreagenda, 31 minutos y 3% ' +
+      'menos de consultas.',
+  },
+  {
+    id: 'primeravez',
+    nombre: 'Opcional · Primera consulta más larga',
+    corto: 'Primera vez ×1,5',
+    factorSobreagenda: 0.1,
+    reduccionAusencias: 0.35,
+    reasignar: true,
+    factorPrimeraVez: 1.5,
+    nota:
+      'La primera consulta se agenda con media vez más de tiempo que un ' +
+      'control. Ataca la causa de las consultas más largas donde está: en la ' +
+      'anamnesis. Cuesta ~6% de consultas, contra ~11% de alargar todos.',
   },
 ] as const;
 
@@ -71,7 +95,7 @@ export const ESCENARIOS: readonly Escenario[] = [
  *
  * POR QUÉ NO ALCANZA UNA SOLA CORRIDA:
  * Cada escenario que cambia el sobreagendamiento o la tasa de ausencia
- * REGENERA la jornada: distinta grilla, distintos pacientes, distintas
+ * REGENERA la jornada: distinta agenda, distintos pacientes, distintas
  * duraciones. Comparar dos escenarios así no compara políticas, compara
  * también dos poblaciones.
  *
@@ -81,8 +105,15 @@ export const ESCENARIOS: readonly Escenario[] = [
  *
  * Se promedian réplicas y se reporta la dispersión, para poder distinguir un
  * efecto real de una diferencia que cabe dentro del error del modelo.
+ *
+ * SON 64 Y NO 8: con 8 réplicas el error estándar de la espera media es de
+ * unos 2 minutos, del orden de la diferencia entre fases. La primera versión
+ * usaba 8 semillas fijas que resultaron una tirada favorable (daban 45 → 31
+ * cuando 64 réplicas con tres juegos de semillas distintos dan 45 → 36). La
+ * simulación tarda menos de un segundo por escenario: no hay razón para
+ * ahorrar réplicas.
  */
-const SEMILLAS = [20260813, 7, 991, 40213, 55, 8123, 314159, 2718] as const;
+const SEMILLAS: readonly number[] = Array.from({ length: 64 }, (_, i) => 1000 + i * 7919);
 
 export interface ResumenEscenario {
   escenario: Escenario;
@@ -125,6 +156,12 @@ function evaluarUnaReplica(escenario: Escenario, semilla: number): ResumenEscena
   const red = generarRed(semilla, {
     factorSobreagenda: escenario.factorSobreagenda,
     reduccionAusencias: escenario.reduccionAusencias,
+    factorPrimeraVez: escenario.factorPrimeraVez ?? 1,
+    factorDuracionReal: escenario.factorDuracionReal ?? 1,
+    factorSlot: escenario.factorSlot ?? 1,
+    ...(escenario.proporcionPrimeraVez !== undefined
+      ? { proporcionPrimeraVez: escenario.proporcionPrimeraVez }
+      : {}),
   });
 
   const porHora = new Map<Minutos, number[]>();
@@ -185,8 +222,11 @@ const desvioDe = (xs: number[]) => {
 };
 
 /** Promedia las réplicas de un escenario y conserva la dispersión. */
-export function evaluarEscenario(escenario: Escenario): ResumenEscenario {
-  const replicas = SEMILLAS.map((s) => evaluarUnaReplica(escenario, s));
+export function evaluarEscenario(
+  escenario: Escenario,
+  semillas: readonly number[] = SEMILLAS,
+): ResumenEscenario {
+  const replicas = semillas.map((s) => evaluarUnaReplica(escenario, s));
 
   // La curva se promedia hora a hora sobre las réplicas que llegaron a esa hora.
   const porHora = new Map<Minutos, number[]>();
@@ -223,5 +263,5 @@ export function evaluarEscenario(escenario: Escenario): ResumenEscenario {
 }
 
 export function compararEscenarios(): ResumenEscenario[] {
-  return ESCENARIOS.map(evaluarEscenario);
+  return ESCENARIOS.map((e) => evaluarEscenario(e));
 }

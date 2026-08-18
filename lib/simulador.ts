@@ -37,6 +37,18 @@ export interface ResultadoDia {
   ausentes: number;
   /** Minutos de consultorio disponibles y sin usar. */
   tiempoMuerto: number;
+  /** Minutos de consultorio libre mientras había pacientes esperando en la sede. */
+  minutosLibreConSala: number;
+  /**
+   * De esos, los minutos en que había esperando alguien de LA MISMA
+   * especialidad del consultorio libre: es la capacidad que la reasignación
+   * puede recuperar. El resto es un cardiólogo libre mientras esperan
+   * pacientes de dermatología: no se recupera moviendo gente, se recupera
+   * planificando la agenda entre especialidades.
+   */
+  minutosLibreRecuperables: number;
+  /** Pacientes atendidos en un consultorio distinto del agendado (reasignados). */
+  reasignados: number;
   /** Espera percibida media de los pacientes iniciados en cada hora. */
   curva: Array<{ hora: Minutos; espera: number }>;
   /** Hora en que la espera media cruza los 15 minutos y ya no vuelve. */
@@ -85,6 +97,9 @@ export function simularDia(
   const iniciosPorHora = new Map<number, number[]>();
   let atendidos = 0;
   let minutosAtendidos = 0;
+  let minutosLibreConSala = 0;
+  let minutosLibreRecuperables = 0;
+  let reasignados = 0;
 
   const HORIZONTE = JORNADA.cierre + 180; // la cola no desaparece al cerrar
 
@@ -103,6 +118,7 @@ export function simularDia(
     }
 
     // 2. Cada consultorio libre toma un paciente.
+    const hayGenteEnSala = [...sala.values()].some((cola) => cola.some((e) => e.desde <= t));
     for (const c of consultorios) {
       if ((libre.get(c.id) ?? 0) > t) continue;
 
@@ -110,7 +126,18 @@ export function simularDia(
         ? tomarDelPool(sala, especialidadDe, c.id, t)
         : tomarDeLaPropia(sala, c.id, t);
 
-      if (!elegido) continue;
+      if (!elegido) {
+        // Consultorio libre y sala con gente: capacidad que se pierde.
+        if (hayGenteEnSala && t < JORNADA.cierre) {
+          minutosLibreConSala++;
+          const esp = especialidadDe.get(c.id);
+          const hayDeLaMisma = [...sala.entries()].some(
+            ([otroId, cola]) => especialidadDe.get(otroId) === esp && cola.some((e) => e.desde <= t),
+          );
+          if (hayDeLaMisma) minutosLibreRecuperables++;
+        }
+        continue;
+      }
 
       const inicio = t;
       esperasPercibidas.push(Math.max(0, inicio - elegido.plan.agendadoA));
@@ -124,6 +151,7 @@ export function simularDia(
       libre.set(c.id, inicio + elegido.duracion);
       minutosAtendidos += elegido.duracion;
       atendidos++;
+      if (elegido.plan.consultorioId !== c.id) reasignados++;
     }
   }
 
@@ -158,6 +186,9 @@ export function simularDia(
     atendidos,
     ausentes: planes.filter((p) => p.desenlace === 'ausente').length,
     tiempoMuerto: Math.max(0, capacidad - minutosAtendidos),
+    minutosLibreConSala,
+    minutosLibreRecuperables,
+    reasignados,
     curva,
     horaDeQuiebre,
   };

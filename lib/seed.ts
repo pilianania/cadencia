@@ -86,6 +86,11 @@ const ESPECIALIDADES: readonly EspecialidadCfg[] = [
   { nombre: 'Endocrinología', slot: 25, sobrecarga: 1.1, tasaAusencia: 0.26 },
 ];
 
+/** Duración nominal del turno de una especialidad, tal como se vende hoy. */
+export function slotNominal(especialidad: string): Minutos {
+  return ESPECIALIDADES.find((e) => e.nombre === especialidad)?.slot ?? 20;
+}
+
 const NOMBRES = [
   'Lucía', 'Martín', 'Sofía', 'Mateo', 'Valentina', 'Joaquín', 'Camila', 'Tomás',
   'Julieta', 'Nicolás', 'Agustina', 'Franco', 'Micaela', 'Ignacio', 'Rocío',
@@ -132,20 +137,43 @@ export interface Red {
   planes: readonly TurnoPlan[];
 }
 
-function generarPaciente(rng: Rng, i: number): Paciente {
+function generarPaciente(rng: Rng, i: number, proporcionPrimeraVez: number): Paciente {
   const nombre = `${elegir(rng, NOMBRES)} ${elegir(rng, APELLIDOS)}`;
   return {
     id: `p-${i}`,
     nombre,
     documento: String(entre(rng, 20_000_000, 46_999_999)),
     telefono: `11${entre(rng, 3000, 6999)}${entre(rng, 1000, 9999)}`,
-    primeraVez: rng() < 0.18,
+    primeraVez: rng() < proporcionPrimeraVez,
   };
 }
 
+/** Cuánto más dura una primera consulta que la media. Supuesto sin fuente local. */
+export const DURACION_RELATIVA_PRIMERA_VEZ = 1.35;
+
+/**
+ * Factor de duración de un control tal que la duración MEDIA no cambie con la
+ * proporción de primeras consultas: p × 1,35 + (1 − p) × control = 1. Así la
+ * calibración contra los 45 minutos del brief se mantiene para cualquier
+ * proporción, y lo único que cambia es la heterogeneidad.
+ */
+export function factorControl(proporcionPrimeraVez: number): number {
+  return (1 - proporcionPrimeraVez * DURACION_RELATIVA_PRIMERA_VEZ) / (1 - proporcionPrimeraVez);
+}
+
 /** Duración real de una consulta: nominal, con cola larga hacia arriba. */
-function duracionReal(rng: Rng, cfg: EspecialidadCfg, intensidad: number): Minutos {
-  const base = cfg.slot * (1 + (cfg.sobrecarga - 1) * intensidad);
+function duracionReal(
+  rng: Rng,
+  cfg: EspecialidadCfg,
+  intensidad: number,
+  primeraVez: boolean,
+  proporcionPrimeraVez: number,
+): Minutos {
+  /* Una primera consulta lleva anamnesis completa y dura más que un control.
+   * Ver factorControl: el promedio no cambia con la proporción, y lo único
+   * que se agrega es la heterogeneidad que hace medible el turno diferenciado. */
+  const tipo = primeraVez ? DURACION_RELATIVA_PRIMERA_VEZ : factorControl(proporcionPrimeraVez);
+  const base = cfg.slot * (1 + (cfg.sobrecarga - 1) * intensidad) * tipo;
   const ruido = 0.75 + rng() * 0.6; // 0.75× – 1.35×
   // 12% de las consultas se desbordan de verdad (estudio extra, paciente complejo).
   const desborde = rng() < 0.12 ? 1.5 + rng() * 0.8 : 1;
@@ -167,12 +195,44 @@ export interface OpcionesRed {
    * ser el pico de la tarde". Eso es ajustar la interpretación del dato al
    * modelo. El brief es el hecho; el modelo se acomoda a él.
    *
-   * Con 1.5 la media da 44.1', que reproduce lo reportado. La sobrecarga
-   * efectiva resultante (~1.30x) sigue por DEBAJO del 1.5-2x que implica la
-   * evidencia gremial, así que la calibración no fuerza el parámetro fuera de
-   * su rango respaldado: lo acerca.
+   * Con 1.66 la media da 45.0' sobre 64 réplicas, que reproduce lo reportado.
+   * (Con las 8 semillas de la primera versión bastaba 1.5, pero eran una
+   * tirada favorable; ver lib/escenarios.ts.) La sobrecarga efectiva
+   * resultante sigue por DEBAJO del 1.5-2x que implica la evidencia gremial,
+   * así que la calibración no fuerza el parámetro fuera de su rango
+   * respaldado: lo acerca.
    */
   intensidadSobrecarga?: number;
+  /**
+   * Multiplicador sobre la duración NOMINAL del turno que se le promete al
+   * paciente, dejando intacta la duración real de la consulta.
+   *
+   * Es la palanca de "agendar lo que la consulta realmente dura". A diferencia
+   * de intensidadSobrecarga (que acortaría la consulta, es decir, pedirle al
+   * profesional que apure), esta agranda el slot. Tiene un costo directo: menos
+   * turnos por jornada.
+   */
+  factorSlot?: number;
+  /**
+   * Multiplicador del turno agendado para pacientes de PRIMERA VEZ.
+   * 1 = mismo turno que un control (situación actual). 1.5 = la primera
+   * consulta se agenda con media vez más de tiempo. Es la variante de "turno
+   * diferenciado por tipo" que la literatura sugiere: la anamnesis de una
+   * primera consulta lleva más tiempo que un control.
+   */
+  factorPrimeraVez?: number;
+  /**
+   * Proporción de turnos que son primera consulta. Supuesto sin fuente local
+   * (la institución tiene el dato). Solo pesa en el escenario de primera vez.
+   */
+  proporcionPrimeraVez?: number;
+  /**
+   * Multiplicador de la duración REAL de la consulta, sin tocar el turno
+   * agendado. Es la palanca del asistente clínico: si la documentación deja
+   * de hacerse a mano dentro de la consulta, la consulta dura menos. 1 = hoy.
+   * 0,9 = la consulta dura un 10% menos.
+   */
+  factorDuracionReal?: number;
   /**
    * Cuán agresivamente se sobreagenda para cubrirse de las ausencias.
    * 0 = agenda a la duración prometida · 1 = compensa toda la tasa de ausencia.
@@ -191,11 +251,23 @@ export const OPCIONES_BASE: Required<OpcionesRed> = {
   factorSobreagenda: 0.35,
   reduccionAusencias: 0,
   /** Calibrado contra los 45' de espera media reportados. Ver OpcionesRed. */
-  intensidadSobrecarga: 1.5,
+  intensidadSobrecarga: 1.66,
+  factorSlot: 1,
+  factorPrimeraVez: 1,
+  proporcionPrimeraVez: 0.17,
+  factorDuracionReal: 1,
 };
 
 export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red {
-  const { factorSobreagenda, reduccionAusencias, intensidadSobrecarga } = {
+  const {
+    factorSobreagenda,
+    reduccionAusencias,
+    intensidadSobrecarga,
+    factorSlot,
+    factorPrimeraVez,
+    proporcionPrimeraVez,
+    factorDuracionReal,
+  } = {
     ...OPCIONES_BASE,
     ...opciones,
   };
@@ -226,7 +298,14 @@ export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red 
     }
 
     for (let c = 0; c < cantConsultorios; c++) {
-      const cfg = paleta[c % paleta.length];
+      const cfgBase = paleta[c % paleta.length];
+      /* El turno que se le promete al paciente se agranda (factorSlot); la
+       * duración REAL de la consulta se calcula siempre con cfgBase, así
+       * agendar con más holgura no hace que la consulta dure distinto. */
+      const cfg: EspecialidadCfg = {
+        ...cfgBase,
+        slot: Math.round(cfgBase.slot * factorSlot),
+      };
       const profId = `${sede.id}-prof-${c}`;
       const consId = `${sede.id}-c${c + 1}`;
 
@@ -243,7 +322,7 @@ export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red 
       });
 
       /* ── Agenda del consultorio ──────────────────────────────────────────
-       * Los slots se agendan en grilla regular. La cascada de demora emerge
+       * Los slots se agendan en agenda regular. La cascada de demora emerge
        * sola de la regla `inicio = max(hora agendada, check-in, sala libre)`.
        * No hay que inyectarla: es consecuencia de sobreagendar contra
        * duraciones reales más largas que las nominales. Ese es exactamente
@@ -281,12 +360,20 @@ export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red 
         Math.round(cfg.slot * (1 - cfg.tasaAusencia * factorSobreagenda)),
       );
 
-      for (let t = JORNADA.apertura; t < JORNADA.cierre; t += paso) {
-        if (t >= almuerzoDesde && t < almuerzoHasta) continue;
-        if (rng() < 0.04) continue; // slot no vendido
+      for (let t = JORNADA.apertura; t < JORNADA.cierre; ) {
+        if (t >= almuerzoDesde && t < almuerzoHasta) { t += paso; continue; }
+        if (rng() < 0.04) { t += paso; continue; } // slot no vendido
 
-        const paciente = generarPaciente(rng, pacienteIdx++);
+        const paciente = generarPaciente(rng, pacienteIdx++, proporcionPrimeraVez);
         const esSobreturno = rng() < 0.07;
+        // El turno de una primera consulta puede ser más largo que el de un
+        // control; la agenda avanza según el turno que efectivamente se vendió.
+        const slotPaciente = paciente.primeraVez
+          ? Math.round(cfg.slot * factorPrimeraVez)
+          : cfg.slot;
+        const pasoPaciente = paciente.primeraVez
+          ? Math.max(5, Math.round(slotPaciente * (1 - cfg.tasaAusencia * factorSobreagenda)))
+          : paso;
 
         const plan: TurnoPlan = {
           id: `${consId}-${t}`,
@@ -296,7 +383,7 @@ export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red 
           paciente,
           especialidad: cfg.nombre,
           agendadoA: t,
-          duracionAgendada: cfg.slot,
+          duracionAgendada: slotPaciente,
           esSobreturno,
           desenlace: 'atendido',
         };
@@ -320,7 +407,12 @@ export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red 
           const adelanto = rng() < 0.78 ? entre(rng, 3, 22) : -entre(rng, 2, 18);
           const checkIn = Math.max(JORNADA.apertura, t - adelanto);
           const inicio = Math.max(t, checkIn, libreA);
-          const fin = inicio + duracionReal(rng, cfg, intensidadSobrecarga);
+          const fin =
+            inicio +
+            Math.max(
+              1,
+              Math.round(duracionReal(rng, cfgBase, intensidadSobrecarga, paciente.primeraVez, proporcionPrimeraVez) * factorDuracionReal),
+            );
 
           plan.checkInA = checkIn;
           plan.inicioA = inicio;
@@ -329,6 +421,7 @@ export function generarRed(semilla = 20260813, opciones: OpcionesRed = {}): Red 
         }
 
         planes.push(plan);
+        t += pasoPaciente;
       }
     }
   }
@@ -360,12 +453,23 @@ export function proyectar(plan: TurnoPlan, ahora: Minutos): Turno {
   let checkInA: Minutos | undefined;
   let inicioA: Minutos | undefined;
   let finA: Minutos | undefined;
+  let salioA: Minutos | undefined;
 
   if (plan.desenlace === 'cancelado') {
     // Sin marca temporal no se puede afirmar que ya avisó: se asume que no.
     estado = ahora >= (plan.canceladoA ?? Infinity) ? 'cancelado' : 'agendado';
   } else if (plan.desenlace === 'ausente') {
-    estado = ahora >= (plan.marcadoAusenteA ?? Infinity) ? 'ausente' : 'agendado';
+    const marcado = plan.marcadoAusenteA ?? Infinity;
+    /* Un paciente que llegó y después se marcó ausente (no respondió al
+     * llamado) estuvo en la sala hasta que se lo marcó: eso se conserva. */
+    const llego = plan.checkInA !== undefined && plan.checkInA <= ahora && plan.checkInA < marcado;
+    if (llego) checkInA = plan.checkInA;
+    if (ahora >= marcado) {
+      estado = 'ausente';
+      if (llego) salioA = marcado;
+    } else {
+      estado = llego ? 'en_espera' : 'agendado';
+    }
   } else {
     if (plan.checkInA !== undefined && ahora >= plan.checkInA) {
       checkInA = plan.checkInA;
@@ -381,5 +485,5 @@ export function proyectar(plan: TurnoPlan, ahora: Minutos): Turno {
     }
   }
 
-  return { ...base, estado, checkInA, inicioA, finA };
+  return { ...base, estado, checkInA, inicioA, finA, salioA };
 }

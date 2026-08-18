@@ -97,27 +97,31 @@ export const DURACION_SLOT: Supuesto = {
     'Se modelaron 15/20/25/30 según especialidad.',
   confianza: 'alta',
   sensibilidad:
-    'Cambia la capacidad instalada. Slots más largos con la misma grilla agravan la ' +
+    'Cambia la capacidad instalada. Slots más largos con la misma agenda agravan la ' +
     'congestión; más cortos la alivian pero empeoran la calidad de la consulta.',
 };
 
 export const SOBRECARGA_CONSULTA: Supuesto = {
   descripcion:
     'Cuánto excede la consulta real a la duración agendada (multiplicador medio)',
-  valor: 1.2,
-  rango: [1.1, 1.3],
+  valor: 1.5,
+  rango: [1.3, 2],
   unidad: 'multiplicador',
   fuente:
-    'CONSERVADOR. CONVERGENCIA DE FUENTES, ninguna concluyente sola. Gremial (Soc. Argentina de Cardiología): al ' +
-    '70% de los profesionales se les exige ofrecer turnos de 10-15 minutos, mientras ' +
-    'que consideran que la consulta requiere 20-30. Esa brecha declarada implica un ' +
-    'factor de 1,5 a 2×. Sectorial (INFOMED): media ambulatoria ~15 min, rara vez supera 20. Gremial federal (COMRA): congestión sistémica, turnos a 3 meses. Académica: estudios de tiempo de consulta ambulatoria en SciELO y en Rev. Argentina de Salud Pública (Hosp. El Cruce, 26 profesionales, 11 subespecialidades). Modelamos 1,1-1,3×, por debajo de todas. La fuente gremial es de UNA especialidad y tiene incentivo a declarar que necesita más tiempo: no se usa sola ni se toma su magnitud.',
+    'ES EL PARÁMETRO CALIBRADO. Se ajustó (intensidadSobrecarga 1,66 en lib/seed.ts) hasta que ' +
+    'el modelo reprodujera los 45 minutos de espera media del brief sobre 64 réplicas; la ' +
+    'duración real media resultante es de ~31 minutos por turno de 20 (1,5×). Converge con las ' +
+    'fuentes: gremial (Soc. Argentina de Cardiología): al 70% de los profesionales se les exige ' +
+    'ofrecer turnos de 10-15 minutos cuando consideran que la consulta requiere 20-30, brecha ' +
+    'de 1,5 a 2×; sectorial (INFOMED): media ambulatoria ~15 min; académica: estudios de tiempo ' +
+    'de consulta en SciELO y Rev. Argentina de Salud Pública. La fuente gremial es de UNA ' +
+    'especialidad y tiene incentivo a declarar que necesita más tiempo: no se usa sola.',
   confianza: 'alta',
   sensibilidad:
-    'Es el motor de la cascada: si la consulta dura más que el slot, cada turno empuja ' +
-    'al siguiente. Con factor 1 no habría deriva y el problema del brief no existiría. ' +
-    'Al haber elegido el extremo bajo, subestimamos el problema y por lo tanto también ' +
-    'el beneficio: el caso real es probablemente mejor que el que presentamos.',
+    'Es el motor de la cascada: si la consulta dura más que el turno, cada consulta empuja a ' +
+    'la siguiente. Con factor 1 no habría deriva y el problema del brief no existiría. Como es ' +
+    'el parámetro calibrado, un valor real distinto cambia el punto de partida, no el orden de ' +
+    'las fases.',
 };
 
 export const JORNADA_HORAS: Supuesto = {

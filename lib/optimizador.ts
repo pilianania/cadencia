@@ -32,8 +32,24 @@ import {
   type Turno,
 } from './domain';
 
-/** Ganancia mínima para justificar mover a un paciente de sala. */
-const GANANCIA_MINIMA: Minutos = 8;
+/**
+ * Ganancia mínima para justificar mover a un paciente de sala.
+ *
+ * Por debajo, el movimiento tiene más costo que beneficio: el paciente se
+ * levanta y cambia de sala, recepción se distrae, la estimación de duración
+ * (mediana observada) tiene su propio error, y una promesa de "pasás 4
+ * minutos antes" que no se cumple destruye confianza.
+ *
+ * El valor sale de `npm run umbral` (analisis/umbral.ts): la estimación
+ * "sin acción" del motor se equivoca 12 minutos en la mediana contra el
+ * inicio real, y 12 es el primer umbral con el que ningún cambio propuesto
+ * promete menos que ese error. Además ahorra más minutos en total que 8
+ * (los cambios chicos gastan el consultorio de destino y bloquean cambios
+ * grandes) y sigue ayudando a 9 de cada 10 pacientes que ayudaría el 8.
+ * Umbrales mayores maximizan minutos pero dejan a un tercio de los pacientes
+ * sin beneficio. Es configurable por sede.
+ */
+export const GANANCIA_MINIMA_POR_DEFECTO: Minutos = 12;
 
 export interface Reasignacion {
   turnoId: string;
@@ -150,6 +166,7 @@ export function planificar(
   turnos: readonly Turno[],
   consultorios: readonly Consultorio[],
   ahora: Minutos,
+  gananciaMinima: Minutos = GANANCIA_MINIMA_POR_DEFECTO,
 ): PlanReasignacion {
   const cargas = construirCargas(turnos, consultorios, ahora);
   const porConsultorio = agruparPorConsultorio(turnos);
@@ -179,9 +196,17 @@ export function planificar(
 
   /* Candidatos: todos los que esperan, del que más esperó al que menos.
    * Atender primero al que más sufrió no es solo justicia percibida — es lo
-   * que evita que alguien quede olvidado mientras el promedio "mejora". */
+   * que evita que alguien quede olvidado mientras el promedio "mejora".
+   * A quien ya se movió una vez no se lo vuelve a mover: aceptó un cambio de
+   * consultorio y tiene una hora comprometida; ofrecerle otro sería volver a
+   * cambiarle la puerta, y para el modelo sería contar dos veces el mismo
+   * ahorro. */
   const candidatos = cargas
-    .flatMap((c) => c.cola.map((t) => ({ turno: t, origen: c.consultorioId })))
+    .flatMap((c) =>
+      c.cola
+        .filter((t) => t.reasignadoDesde === undefined)
+        .map((t) => ({ turno: t, origen: c.consultorioId })),
+    )
     .sort(
       (a, b) => (esperaMinutos(b.turno, ahora) ?? 0) - (esperaMinutos(a.turno, ahora) ?? 0),
     );
@@ -224,7 +249,7 @@ export function planificar(
         desde,
         ahora,
       );
-      if (inicio < mejorInicio - GANANCIA_MINIMA) {
+      if (inicio < mejorInicio - gananciaMinima) {
         mejorInicio = inicio;
         mejorDestino = c.consultorioId;
       }

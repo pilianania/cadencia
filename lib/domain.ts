@@ -114,8 +114,14 @@ export interface Turno {
   inicioA?: Minutos;
   /** Momento en que se cerró la consulta. */
   finA?: Minutos;
+  /**
+   * Momento en que dejó la sala sin ser atendido (se lo marcó ausente después
+   * de haber llegado). Permite reconstruir cuánto estuvo esperando aunque el
+   * turno haya terminado en ausente.
+   */
+  salioA?: Minutos;
 
-  /** Turno insertado fuera de la grilla regular (demanda espontánea). */
+  /** Turno insertado fuera de la agenda regular (demanda espontánea). */
   esSobreturno: boolean;
 
   /**
