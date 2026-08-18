@@ -134,9 +134,9 @@ Agendar la primera consulta a 1,5 veces el turno de un control lleva la espera d
 
 Las 49 consultas y los 25 minutos dependen de un supuesto sin fuente local: que el 17% de los turnos sean primeras consultas. Con 10% el escenario da 28,7 minutos y cuesta 20 consultas; con 28%, la proporción del sistema público español, 19,3 minutos y 77 consultas; con 37%, la del Hospital General de México, 16,9 minutos y 104 consultas (ver Supuestos, en el Anexo). Un punto y medio está dentro de los órdenes de magnitud de la literatura (uno de cada cinco pacientes cambió de médico por la espera), pero no está demostrado para esta red, y depende de los USD 60 por paciente nuevo, que son una aproximación. Por eso la fase 0 mide las dos cosas: la brecha real entre turno y consulta, y la proporción de pacientes que vuelven a la red, antes y después, y con eso se fija el multiplicador de la primera consulta y se sigue el resultado.
 
-# El módulo como producto: caso para Intuit Salud
+# El módulo como producto: caso para la empresa
 
-La pestaña Negocio responde si a la red le conviene comprar. Esta sección responde una decisión previa de Intuit Salud: si el desarrollo se encara como un trabajo a medida para esta red o como un módulo de producto reutilizable del que esta red es el primer cliente. El análisis de mercado que sigue solo tiene sentido en el segundo caso.
+La pestaña Negocio responde si a la red le conviene comprar. Esta sección responde una decisión previa de la empresa: si el desarrollo se encara como un trabajo a medida para esta red o como un módulo de producto reutilizable del que esta red es el primer cliente. El análisis de mercado que sigue solo tiene sentido en el segundo caso.
 
 ## Dos formas de encarar el desarrollo
 
@@ -145,15 +145,15 @@ La pestaña Negocio responde si a la red le conviene comprar. Esta sección resp
 | Qué se construye | Lo mismo, pero configurado y entregado para esta red. | Lo mismo, diseñado desde el inicio para activarse en cualquier institución: parametrizable por sede, especialidad y umbrales, integrable por HL7 y FHIR con lo que cada una tenga. |
 | Cómo se cobra a esta red | Precio único por el desarrollo y la implantación, USD 65.000 a 75.000 (costo de USD 47.500 más margen), y soporte anual aparte. Sin licencia. | Implantación de USD 25.000 más licencia de USD 500 por sede y mes. Es la oferta económica de referencia de la sección anterior. |
 | Qué le conviene a la red | Paga más al inicio y menos después. Recupera la inversión en menos de un año igual. | Paga menos al inicio y una licencia recurrente. Recibe mejoras continuas del módulo. |
-| Qué le conviene a Intuit | Cobra el desarrollo una vez. El conocimiento queda, pero no el ingreso. | El 65% del esfuerzo (desarrollo y diseño) se reutiliza en cada cliente siguiente. Se abre el mercado que se dimensiona a continuación. |
+| Qué le conviene a la empresa | Cobra el desarrollo una vez. El conocimiento queda, pero no el ingreso. | El 65% del esfuerzo (desarrollo y diseño) se reutiliza en cada cliente siguiente. Se abre el mercado que se dimensiona a continuación. |
 
-**Se recomienda el módulo de producto**, por tres razones: la mayor parte del esfuerzo es reutilizable, ningún oferente relevado cubre este segmento, y el mercado existe y se puede contar. La oferta a esta red se formuló en consecuencia. Si Intuit prefiriera el desarrollo a medida, la propuesta técnica no cambia; cambia la oferta económica y esta sección deja de aplicar.
+**Se recomienda el módulo de producto**, por tres razones: la mayor parte del esfuerzo es reutilizable, ningún oferente relevado cubre este segmento, y el mercado existe y se puede contar. La oferta a esta red se formuló en consecuencia. Si la empresa prefiriera el desarrollo a medida, la propuesta técnica no cambia; cambia la oferta económica y esta sección deja de aplicar.
 
 ## Tamaño del mercado
 
 El Registro Federal de Establecimientos de Salud ([REFES, corte de diciembre de 2025](https://datos.salud.gob.ar/dataset/listado-establecimientos-de-salud-asentados-en-el-registro-federal-refes)) registra 36.047 establecimientos, de los cuales 23.186 son de financiamiento privado. Dentro de los privados, la tipología que corresponde exactamente al segmento de esta propuesta, *con atención médica diaria y con especialidades*, agrupa **6.860 establecimientos**. Se suman 2.122 clínicas y sanatorios privados con internación, que operan consultorios externos con la misma dinámica.
 
-*Argentina, sector privado. El mercado se mide en sedes y en cuánto podrían recuperar esas sedes por año, tomando como referencia lo que recupera cada sede de esta red: USD 13.250 anuales. Ese valor no depende de lo que cobre Intuit Salud.*
+*Argentina, sector privado. El mercado se mide en sedes y en cuánto podrían recuperar esas sedes por año, tomando como referencia lo que recupera cada sede de esta red: USD 13.250 anuales. Ese valor no depende de lo que cobre la empresa.*
 
 |  | Definición | Sedes | Valor recuperable anual |
 |---|---|---|---|
@@ -161,7 +161,7 @@ El Registro Federal de Establecimientos de Salud ([REFES, corte de diciembre de 
 | SAM | Los que tienen varios consultorios de la misma especialidad, condición para que la reasignación aplique: la totalidad de los que tienen internación y un 35% de los ambulatorios, supuesto a validar con el detalle del registro | 4.500 | USD 60 M |
 | SOM a tres años | 3% del SAM, alcanzable con la red de esta propuesta, dos pilotos por año en redes comparables y venta directa a instituciones medianas | 135 | USD 1,8 M |
 
-Ese valor es lo que las clínicas pueden recuperar; no es lo que factura Intuit Salud. Intuit cobra la licencia: a USD 6.000 por sede y año, 135 sedes son USD 810.000 anuales. Ese es el número que se proyecta en la tabla de adopción.
+Ese valor es lo que las clínicas pueden recuperar; no es lo que factura la empresa, que cobra la licencia: a USD 6.000 por sede y año, 135 sedes son USD 810.000 anuales. Ese es el número que se proyecta en la tabla de adopción.
 
 El sector público, con 11.892 establecimientos provinciales y municipales que operan consultorios externos, no se incluye en el TAM porque compra con procesos y plazos distintos. Constituye una segunda etapa.
 
@@ -173,7 +173,7 @@ El mercado crece, pero eso no dice cuántas sedes va a sumar este módulo: un pr
 
 ## Proyección de adopción e ingresos
 
-La tabla estima cuántas sedes usarían el módulo al cierre de cada año y cuánto facturaría Intuit Salud por licencias si todas ellas pagaran el año completo, a USD 6.000 por sede y año. Es un supuesto de ritmo comercial, no una previsión: sirve para dimensionar el producto, no para comprometer ventas.
+La tabla estima cuántas sedes usarían el módulo al cierre de cada año y cuánto facturaría la empresa por licencias si todas ellas pagaran el año completo, a USD 6.000 por sede y año. Es un supuesto de ritmo comercial, no una previsión: sirve para dimensionar el producto, no para comprometer ventas.
 
 *Facturación por licencia a régimen, es decir con todas las sedes de ese año pagando doce meses. No incluye la mensajería, que se factura a costo.*
 
@@ -183,7 +183,7 @@ La tabla estima cuántas sedes usarían el módulo al cierre de cada año y cuá
 | 2 | Se suman cinco redes comparables de 8 sedes (40) y ventas sueltas a instituciones medianas (4). | 60 | USD 360.000 |
 | 3 | Se alcanza el 3% del mercado accesible (SAM de 4.500 sedes), sumando 75 sedes más entre redes e instituciones medianas. | 135 | USD 810.000 |
 
-## Costo para Intuit Salud y economía del producto
+## Costo para la empresa y economía del producto
 
 *Costo interno del primer despliegue, a USD 3.000 por persona y mes, USD 17,30 la hora, según la tabla de horas del plan de implementación.*
 
@@ -196,7 +196,7 @@ La tabla estima cuántas sedes usarían el módulo al cierre de cada año y cuá
 | Total primer despliegue | 2.750 | **USD 47.500** |
 | Infraestructura del módulo |  | USD 500 a 1.000 por mes |
 
-Con la oferta de referencia, la primera red paga USD 25.000 por la implantación (un servicio: medir, configurar, integrar y capacitar; cubre los USD 14.000 que cuesta hacerlo) y USD 48.000 por año de licencia por usar el módulo, que sigue siendo de Intuit Salud. Entre las dos cosas, el primer año entran USD 73.000 contra USD 47.500 de costo: el desarrollo reutilizable (USD 33.500) queda cubierto con el primer cliente. Desde el segundo, cada sede nueva cuesta USD 2.000 de implantación más un poco de infraestructura, y paga USD 6.000 por año de licencia. Pero eso no es todo el costo: hay que sostener soporte, venta y mejoras del módulo, que crecen con la cantidad de sedes. La tabla siguiente los incluye.
+Con la oferta de referencia, la primera red paga USD 25.000 por la implantación (un servicio: medir, configurar, integrar y capacitar; cubre los USD 14.000 que cuesta hacerlo) y USD 48.000 por año de licencia por usar el módulo, que sigue siendo de la empresa. Entre las dos cosas, el primer año entran USD 73.000 contra USD 47.500 de costo: el desarrollo reutilizable (USD 33.500) queda cubierto con el primer cliente. Desde el segundo, cada sede nueva cuesta USD 2.000 de implantación más un poco de infraestructura, y paga USD 6.000 por año de licencia. Pero eso no es todo el costo: hay que sostener soporte, venta y mejoras del módulo, que crecen con la cantidad de sedes. La tabla siguiente los incluye.
 
 ## Resultado del módulo a tres años
 

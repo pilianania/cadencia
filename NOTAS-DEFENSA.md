@@ -105,7 +105,7 @@ técnica: la agenda con recordatorios entrega la fase 2 sin ajuste de la agenda,
 eso empeora la espera de 36 a 51 minutos. La comparación es contra el beneficio
 (USD 106.000 anuales si los turnos liberados se vuelven a dar), no contra ese precio.
 
-### "¿Cuánto gana Intuit con esto?"
+### "¿Cuánto gana la empresa con esto?"
 
 Primer año negativo (USD 57.000), se paga durante el segundo, y a régimen
 deja ~50% de margen. Lo que hay que construir no es el software: es capacidad de
@@ -116,7 +116,7 @@ año 2 cierra dos redes en vez de cinco, el equilibrio pasa al tercer año.
 
 **No asumir nada sobre Clever.** El brief lo pide. La propuesta se presenta como
 módulo autónomo que se integra por HL7 y FHIR con lo que la red tenga. Los
-antecedentes del oferente quedan como dato a completar por Intuit.
+antecedentes del oferente quedan como dato a completar por la empresa.
 
 ### "¿De dónde sale que la clínica se queda con el 30% de la consulta?"
 
